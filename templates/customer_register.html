@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Register — ShopBot{% endblock %}
+
+{% block extra_styles %}
+<style>
+.auth-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    width: 400px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.logo { text-align: center; margin-bottom: 28px; }
+.logo h2 { font-size: 20px; color: #0057B8; font-weight: 700; }
+.logo p  { font-size: 13px; color: #888; margin-top: 4px; }
+.error {
+    background: #fff0f0;
+    color: #cc0000;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+}
+input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+input:focus { border-color: #0057B8; }
+button {
+    width: 100%;
+    background: #0057B8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+button:hover { background: #0041a8; }
+.footer { text-align: center; font-size: 13px; color: #666; }
+.footer a { color: #0057B8; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card">
+        <div class="logo">
+            <h2>Create an account</h2>
+            <p>Join ShopBot to track your orders</p>
+        </div>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label>Full Name</label>
+            <input type="text" name="name" placeholder="Alice Tan" required />
+            <label>Email</label>
+            <input type="email" name="email" placeholder="you@email.com" required />
+            <label>Password</label>
+            <input type="password" name="password" placeholder="••••••••" required />
+            <button type="submit">Create Account</button>
+        </form>
+        <div class="footer">
+            Already have an account? <a href="/customer/login">Sign in</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
