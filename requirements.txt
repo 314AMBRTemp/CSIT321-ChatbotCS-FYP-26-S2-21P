@@ -1,5 +1,0 @@
-flask
-firebase-admin
-
-// These are requirements of the project to create 
-// datasets and populate them onto firebase
