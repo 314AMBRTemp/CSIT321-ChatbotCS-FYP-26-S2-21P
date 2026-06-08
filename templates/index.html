@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}AssistFlow - Home{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+
+<section class="site_banner_home">
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12">
+        <div class="banner_overlay">
+          <div class="banner_heading">
+            <h2 class="text-white text-center mb-0 mt-3">AssistFlow</h2>
+            <h3 class="text-white text-center">Reliable, Creative, and Trustworthy</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="home_promo">
+  <div class="container">
+    <div class="row no-gutters">
+      <div class="col-md-5 offset-md-1 home_promo_image bg-white">
+        <img src="{{ url_for('static', filename='images/products/mtx4.jpg') }}" alt="main product image">
+      </div>
+      <div class="col-md-5 product_promo_info">
+        <p class="promo_sub mb-2">Adorable Animal Cups</p>
+        <h1 class="promo_main mb-2">Enjoy Your Drinks</h1>
+        <a href="{{ url_for('products') }}" class="btn btn-primary">Discover Products</a>
+        <p class="promo_footer mt-5">Perfect for Any Occasion</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="row mb-3 mt-5">
+          <div class="col-12 text-center">
+            <h2 class="section-title">About AssistFlow</h2>
+            <p class="section-subtitle mb-5">See what we are at core</p>
+          </div>
+        </div>
+        <div class="row mb-5 text-center">
+          <div class="col-sm-3 col-md-4 mb-3">
+            <div class="card feature-card">
+              <div class="card-body">
+                <div class="icon-section"><span class="ti-comments"></span></div>
+                <h6 class="features-title mt-3 mb-3">Natural Charm</h6>
+                <p>Our cups are designed with nature in mind to provide joy to your mornings.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-3 col-md-4 mb-3">
+            <div class="card feature-card">
+              <div class="card-body">
+                <div class="icon-section"><span class="ti-timer"></span></div>
+                <h6 class="features-title mt-3 mb-3">Durable</h6>
+                <p>Made from the highest quality ceramic to last for years of daily use.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-3 col-md-4 mb-3">
+            <div class="card feature-card">
+              <div class="card-body">
+                <div class="icon-section"><span class="ti-plug"></span></div>
+                <h6 class="features-title mt-3 mb-3">Easy to Clean</h6>
+                <p>Dishwasher and microwave safe for simple and convenient use.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="subscribe">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h6>Subscribe</h6>
+        <p>Sign up for our newsletter and special cup releases</p>
+        <form action="" class="subscription_form">
+          <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Your email address">
+            <div class="input-group-append">
+              <button class="btn btn-secondary" type="button">Subscribe</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="request_quote" class="quotation_form pt-3 pb-5">
+  <div class="container">
+    <div class="row mb-3 mt-5">
+      <div class="col-12 text-center">
+        <h2 class="section-title">Contact Us</h2>
+        <p class="section-subtitle mb-5">Anything you want to know</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 offset-md-3">
+        <form>
+          <div class="form-group">
+            <label for="visitor_name">Name</label>
+            <input type="text" class="form-control" id="visitor_name" placeholder="John Doe">
+          </div>
+          <div class="form-group">
+            <label for="visitor_email">Email</label>
+            <input type="email" class="form-control" id="visitor_email" placeholder="name@domain.com">
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea class="form-control" id="message" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary-soft d-block w-100" type="submit">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="custom_rf">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h6>Custom solutions</h6>
+        <p>Tell us a little bit about your project. We will get back to you as soon as we can<br>with some ideas of how we can make it work.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
