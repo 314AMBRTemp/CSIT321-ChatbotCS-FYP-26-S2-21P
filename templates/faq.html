@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}AssistFlow - FAQ{% endblock %}
+{% block nav_faq %}active{% endblock %}
+
+{% block content %}
+
+<section class="site_banner_inner">
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12">
+        <div class="banner_overlay_inner">
+          <div class="banner_heading_inner">
+            <h2 class="text-white text-center mb-0 mt-3">FAQ</h2>
+            <h3 class="text-white text-center">Answers to your questions</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact_form pt-3 pb-5">
+  <div class="container">
+    <div class="row mb-3 mt-5">
+      <div class="col-12 text-center">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle mb-5">If you have more questions, contact us</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-body">
+            <div id="accordion5" class="faq-default faq-v5">
+
+              <div class="card">
+                <div class="card-header" id="i1">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r1" aria-expanded="false" aria-controls="r1">
+                      How are the Animal Cups made?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r1" class="collapse" aria-labelledby="i1" data-parent="#accordion5">
+                  <div class="card-body">
+                    Our animal cups are handcrafted using high-quality ceramic with animal-inspired glazing. Each cup goes through a quality check before shipping.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="i2">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r2" aria-expanded="false" aria-controls="r2">
+                      Is it easy to order online?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r2" class="collapse" aria-labelledby="i2" data-parent="#accordion5">
+                  <div class="card-body">
+                    Yes! Simply browse our products, contact us via the contact form, and our team will process your order quickly.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="i3">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r3" aria-expanded="false" aria-controls="r3">
+                      How long does delivery take?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r3" class="collapse" aria-labelledby="i3" data-parent="#accordion5">
+                  <div class="card-body">
+                    Standard orders typically take 3–5 business days within Singapore. International shipping may take 7–14 days.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="i4">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r4" aria-expanded="false" aria-controls="r4">
+                      Can I track my order?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r4" class="collapse" aria-labelledby="i4" data-parent="#accordion5">
+                  <div class="card-body">
+                    Absolutely! Log in to your account and visit <a href="{{ url_for('customer.dashboard') }}">My Orders</a> to view real-time status. You can also use our chatbot to track by order ID and email.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="i5">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r5" aria-expanded="false" aria-controls="r5">
+                      Can I request a custom animal cup?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r5" class="collapse" aria-labelledby="i5" data-parent="#accordion5">
+                  <div class="card-body">
+                    Yes! We love custom orders. Reach out through our <a href="{{ url_for('contact') }}">Contact page</a> and describe the animal and style you want.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="i6">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-left collapsed" data-toggle="collapse" data-target="#r6" aria-expanded="false" aria-controls="r6">
+                      Is my data secure?
+                    </button>
+                  </h5>
+                </div>
+                <div id="r6" class="collapse" aria-labelledby="i6" data-parent="#accordion5">
+                  <div class="card-body">
+                    Yes. All customer data is encrypted and we adhere strictly to data privacy standards. Your information is never shared with third parties.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

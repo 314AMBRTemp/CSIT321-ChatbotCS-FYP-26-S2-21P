@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}AssistFlow - {{ product.name }}{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+
+<section>
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12 site_banner_inner_products">
+        <div class="banner_heading_inner">
+          <h3 class="text-center">{{ product.name }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="products_single">
+  <div class="container">
+    <div class="row no-gutters">
+      <div class="col-12">
+        <div class="products_list_single">
+          <div class="row no-gutters">
+            <div class="col-md-6">
+              <div class="product_item_image_wrapper">
+                <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}" class="product_item_image">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="product_item_content p-3">
+                <h6 class="title">{{ product.name }}</h6>
+                <div class="price">{{ product.price }} / month</div>
+                <div class="description">{{ product.desc }}</div>
+                <div class="product_item_footer mt-3">
+                  <a href="{{ url_for('contact') }}" class="details_link">
+                    <button class="btn btn-primary-soft">Find out more</button>
+                  </a>
+                  <a href="{{ url_for('products') }}" class="btn btn-outline-secondary ml-2">← Back to Products</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="product_single_specification mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <ul class="nav nav-tabs" id="mytab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-selected="true">Description</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="des-tab" data-toggle="tab" href="#des" role="tab" aria-selected="false">Additional Information</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="mytabcontent">
+          <div class="tab-pane fade show active" id="home" role="tabpanel">
+            <div class="table-responsive mt-5">
+              <table class="table table-bordered">
+                <tbody>
+                  <tr><td>Capacity</td><td>Up to 350ml</td></tr>
+                  <tr><td>Material</td><td>High-grade ceramic</td></tr>
+                  <tr><td>Dishwasher safe</td><td>Yes</td></tr>
+                  <tr><td>Microwave safe</td><td>Yes</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="des" role="tabpanel">
+            <div class="table-responsive mt-5">
+              <table class="table table-bordered">
+                <tbody>
+                  <tr><td>Weight</td><td>Very lightweight</td></tr>
+                  <tr><td>Warranty</td><td>1 year</td></tr>
+                  <tr><td>Ships from</td><td>Singapore</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
