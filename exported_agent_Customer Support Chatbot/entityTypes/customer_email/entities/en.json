@@ -1,0 +1,7 @@
+{
+  "entities": [ {
+    "value": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+    "synonyms": [ "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" ],
+    "languageCode": "en"
+  } ]
+}

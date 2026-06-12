@@ -1,0 +1,7 @@
+{
+  "entities": [ {
+    "value": "(?i)ORD-[0-9]+",
+    "synonyms": [ "(?i)ORD-[0-9]+" ],
+    "languageCode": "en"
+  } ]
+}

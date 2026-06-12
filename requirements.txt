@@ -3,3 +3,6 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-Bcrypt==1.0.1
 google-cloud-dialogflow-cx==2.5.0
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.27.3
+google-auth==2.53.0

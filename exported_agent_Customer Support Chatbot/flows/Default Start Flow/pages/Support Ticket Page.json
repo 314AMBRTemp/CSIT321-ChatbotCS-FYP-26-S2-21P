@@ -1,0 +1,58 @@
+{
+  "name": "169e1e1f-b7d5-4134-a9aa-cb9152f02f2d",
+  "displayName": "Support Ticket Page",
+  "form": {
+    "parameters": [ {
+      "displayName": "order_id",
+      "required": true,
+      "entityType": "@sys.any",
+      "fillBehavior": {
+        "initialPromptFulfillment": {
+          "messages": [ {
+            "text": {
+              "text": [ "Please provide your Order ID (e.g., ORD-001)." ]
+            },
+            "languageCode": "en"
+          } ]
+        }
+      }
+    }, {
+      "displayName": "issue_type",
+      "required": true,
+      "entityType": "@sys.any",
+      "fillBehavior": {
+        "initialPromptFulfillment": {
+          "messages": [ {
+            "text": {
+              "text": [ "What is the category of your issue? (e.g., Damaged, Missing, Wrong Item)" ]
+            },
+            "languageCode": "en"
+          } ]
+        }
+      }
+    }, {
+      "displayName": "description",
+      "required": true,
+      "entityType": "@sys.any",
+      "fillBehavior": {
+        "initialPromptFulfillment": {
+          "messages": [ {
+            "text": {
+              "text": [ "Please provide a short description of what happened." ]
+            },
+            "languageCode": "en"
+          } ]
+        }
+      }
+    } ]
+  },
+  "transitionRoutes": [ {
+    "intent": "Create ticket intent",
+    "condition": "$page.status = \"FINAL\"",
+    "triggerFulfillment": {
+      "webhook": "verify_and_fetch_order",
+      "tag": "create_ticket"
+    },
+    "name": "bc97ccfc-308d-4bc0-bed5-06de3b80e703"
+  } ]
+}

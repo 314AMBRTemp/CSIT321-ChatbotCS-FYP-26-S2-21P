@@ -1,0 +1,6 @@
+{
+  "name": "c3d7f982-8b22-4b59-862b-5db452f32c29",
+  "displayName": "Create ticket intent",
+  "priority": 500000,
+  "numTrainingPhrases": 5
+}

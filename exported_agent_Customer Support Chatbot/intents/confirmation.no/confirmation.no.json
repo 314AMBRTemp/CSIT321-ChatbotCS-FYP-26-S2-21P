@@ -1,0 +1,7 @@
+{
+  "name": "c4431bb1-7d85-4fa7-a41b-d88513503dd2",
+  "displayName": "confirmation.no",
+  "priority": 500000,
+  "description": "For when a customer responses negatively to a prompt",
+  "numTrainingPhrases": 11
+}

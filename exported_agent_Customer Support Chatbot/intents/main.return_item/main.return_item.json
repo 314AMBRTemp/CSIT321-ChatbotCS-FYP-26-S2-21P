@@ -1,0 +1,7 @@
+{
+  "name": "9b399b6a-f47a-4b44-b7d3-31cce517fb4e",
+  "displayName": "main.return_item",
+  "priority": 500000,
+  "description": "For when a customer wants to return an item",
+  "numTrainingPhrases": 20
+}
