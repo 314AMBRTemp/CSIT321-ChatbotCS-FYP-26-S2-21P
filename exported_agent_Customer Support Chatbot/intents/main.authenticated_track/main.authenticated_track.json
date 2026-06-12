@@ -1,0 +1,7 @@
+{
+  "name": "5fcbea05-5be8-46c3-99f4-bddd260a0641",
+  "displayName": "main.authenticated_track",
+  "priority": 500000,
+  "description": "This track is for authenticated users",
+  "numTrainingPhrases": 16
+}

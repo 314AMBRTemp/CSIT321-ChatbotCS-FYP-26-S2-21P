@@ -1,0 +1,15 @@
+{
+  "name": "85a28052-258b-45c4-b4c4-1ef621cbf201",
+  "displayName": "Authenticated Track Result",
+  "form": {
+  
+  },
+  "entryFulfillment": {
+    "messages": [ {
+      "text": {
+        "text": [ "Here are your package details:\nOrder ID: $session.params.order_id\nStatus: $session.params.package_status\nEstimated Delivery: $session.params.estimated_delivery\nCourier: $session.params.courier\nDelivery Address: $session.params.delivery_address" ]
+      },
+      "languageCode": "en"
+    } ]
+  }
+}
