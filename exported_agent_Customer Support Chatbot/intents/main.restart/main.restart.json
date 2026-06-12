@@ -1,0 +1,10 @@
+{
+  "name": "fe1f51c6-3031-4034-bf70-33928f507759",
+  "displayName": "main.restart",
+  "parameters": [ {
+    "id": "person",
+    "entityType": "@sys.person"
+  } ],
+  "priority": 500000,
+  "numTrainingPhrases": 17
+}

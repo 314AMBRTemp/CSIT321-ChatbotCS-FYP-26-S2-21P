@@ -1,0 +1,47 @@
+{
+  "name": "8b2c87a8-b76f-4372-8789-8763fcd2d31f",
+  "displayName": "Verify Identity",
+  "form": {
+    "parameters": [ {
+      "displayName": "order_id",
+      "required": true,
+      "entityType": "@order_id",
+      "fillBehavior": {
+        "initialPromptFulfillment": {
+          "messages": [ {
+            "text": {
+              "text": [ "What is your order number?\nPlease type your order ID only, for example: ORD-001" ]
+            },
+            "languageCode": "en"
+          } ]
+        }
+      }
+    }, {
+      "displayName": "customer_email",
+      "required": true,
+      "entityType": "@customer_email",
+      "fillBehavior": {
+        "initialPromptFulfillment": {
+          "messages": [ {
+            "text": {
+              "text": [ "What is the email address used on the order?\nPlease type your email address only, for example: bob@email.com" ]
+            },
+            "languageCode": "en"
+          } ]
+        }
+      }
+    } ]
+  },
+  "entryFulfillment": {
+  
+  },
+  "transitionRoutes": [ {
+    "condition": "$page.params.status = \"FINAL\"",
+    "triggerFulfillment": {
+    
+    },
+    "targetPage": "Confirm Details",
+    "name": "0c7f78ba-881f-4a1a-b1ae-9aff38a05d28"
+  } ],
+  "description": "Verify Identity with order_id \u0026\u0026 customer_email\nbefore showing doing \u003csomething\u003e"
+}

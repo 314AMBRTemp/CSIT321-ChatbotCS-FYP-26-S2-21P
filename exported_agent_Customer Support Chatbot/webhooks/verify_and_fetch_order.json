@@ -1,0 +1,16 @@
+{
+  "name": "afb518a8-8d83-4dce-ba3b-0cc87ceb46eb",
+  "displayName": "verify_and_fetch_order",
+  "genericWebService": {
+    "uri": "https://scapegoat-attach-elk.ngrok-free.dev/webhook",
+    "requestHeaders": [ {
+      "key": "Authorization",
+      "value": "Bearer 6e037887676fca2fe030065b2abc127a91ca899062295c2e58f58d3659f22c27"
+    } ],
+    "webhookType": "STANDARD",
+    "serviceAgentAuth": "NONE"
+  },
+  "timeout": {
+    "seconds": 5
+  }
+}

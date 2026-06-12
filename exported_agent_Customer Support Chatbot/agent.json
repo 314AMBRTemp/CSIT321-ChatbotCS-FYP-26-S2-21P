@@ -1,0 +1,13 @@
+{
+  "displayName": "Customer Support Chatbot",
+  "defaultLanguageCode": "en",
+  "timeZone": "Asia/Hong_Kong",
+  "projectNumber": 85412749345,
+  "startFlow": "Default Start Flow",
+  "advancedSettings": {
+    "loggingSettings": {
+    
+    }
+  },
+  "dataResidencyOption": "DATA_RESIDENCY_IN_USE_COMPLIANT"
+}

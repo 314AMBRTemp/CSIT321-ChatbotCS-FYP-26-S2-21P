@@ -1,0 +1,11 @@
+{
+  "name": "f028453d-4d3b-426b-beb6-de14da84ba6c",
+  "displayName": "main.cancel_order",
+  "parameters": [ {
+    "id": "number",
+    "entityType": "@sys.number"
+  } ],
+  "priority": 500000,
+  "description": "For when a customer wants to cancel an order",
+  "numTrainingPhrases": 16
+}

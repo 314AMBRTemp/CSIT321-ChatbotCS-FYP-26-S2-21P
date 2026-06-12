@@ -1,0 +1,92 @@
+{
+  "name": "00000000-0000-0000-0000-000000000000",
+  "displayName": "Default Start Flow",
+  "description": "A start flow created along with the agent",
+  "transitionRoutes": [ {
+    "intent": "Default Welcome Intent",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "Hi! How are you doing?", "Hello! How can I help you?", "Good day! What can I do for you today?", "Greetings! How can I assist?" ]
+        },
+        "languageCode": "en"
+      } ]
+    },
+    "name": "f274556a-f43f-48e6-b5e1-3b902793fc37"
+  }, {
+    "intent": "main.authenticated_track",
+    "condition": "$session.params.is_logged_in = true",
+    "triggerFulfillment": {
+      "webhook": "verify_and_fetch_order",
+      "tag": "authenticated_track"
+    },
+    "targetPage": "Authenticated Track Result",
+    "name": "59d03de2-3278-49a5-9b41-066b37cebf04"
+  }, {
+    "intent": "main.track_package",
+    "triggerFulfillment": {
+    
+    },
+    "targetPage": "Verify Identity",
+    "name": "78ae44a7-b0c2-442d-b75b-f00edb3027cc",
+    "description": "Track Package"
+  }, {
+    "intent": "main.restart",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "Sure, let's start over. How can I help you?" ]
+        },
+        "languageCode": "en"
+      } ],
+      "setParameterActions": [ {
+        "parameter": "order_id",
+        "value": null
+      }, {
+        "parameter": "customer_email",
+        "value": null
+      }, {
+        "parameter": "verified",
+        "value": null
+      }, {
+        "parameter": "package_status",
+        "value": null
+      } ]
+    },
+    "targetPage": "Start Page",
+    "name": "4d1375ca-a44f-40ec-b8bf-e2a74afaed02"
+  } ],
+  "eventHandlers": [ {
+    "event": "sys.no-match-default",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "I didn't get that. Can you say it again?", "I missed what you said. What was that?", "Sorry, could you say that again?", "Sorry, can you say that again?", "Can you say that again?", "Sorry, I didn't get that. Can you rephrase?", "Sorry, what was that?", "One more time?", "What was that?", "Say that one more time?", "I didn't get that. Can you repeat?", "I missed that, say that again?" ]
+        },
+        "languageCode": "en"
+      } ]
+    },
+    "name": "8caef868-1852-46f5-88f5-d2ebd13e8377"
+  }, {
+    "event": "sys.no-input-default",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "I didn't get that. Can you say it again?", "I missed what you said. What was that?", "Sorry, could you say that again?", "Sorry, can you say that again?", "Can you say that again?", "Sorry, I didn't get that. Can you rephrase?", "Sorry, what was that?", "One more time?", "What was that?", "Say that one more time?", "I didn't get that. Can you repeat?", "I missed that, say that again?" ]
+        },
+        "languageCode": "en"
+      } ]
+    },
+    "name": "a6a08cdb-43e5-435c-ac87-16fb28407489"
+  } ],
+  "nluSettings": {
+    "modelType": "MODEL_TYPE_ADVANCED",
+    "classificationThreshold": 0.30000001
+  },
+  "nluSettingsList": [ {
+    "modelType": "MODEL_TYPE_ADVANCED",
+    "classificationThreshold": 0.30000001,
+    "customConfigKey": "03793602-37c8-4a46-aa14-542a74446a78",
+    "languageCode": "en"
+  } ]
+}

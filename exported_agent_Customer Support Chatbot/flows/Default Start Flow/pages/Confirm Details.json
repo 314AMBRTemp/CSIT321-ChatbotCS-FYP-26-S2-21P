@@ -1,0 +1,49 @@
+{
+  "name": "f93f3e13-2dc2-4385-9112-c2cc9db5a6d4",
+  "displayName": "Confirm Details",
+  "form": {
+  
+  },
+  "entryFulfillment": {
+    "messages": [ {
+      "text": {
+        "text": [ "Please verify that the information provided is correct\nOrder ID: $session.params.order_id\nE-Mail: $session.params.customer_email" ]
+      },
+      "languageCode": "en"
+    } ]
+  },
+  "transitionRoutes": [ {
+    "intent": "confirmation.yes",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "Looking up the status with information provided..." ]
+        },
+        "languageCode": "en"
+      } ],
+      "webhook": "verify_and_fetch_order",
+      "tag": "track_package"
+    },
+    "targetPage": "Track Result Page",
+    "name": "fb05a270-4830-4894-9fc9-dba0584440bc"
+  }, {
+    "intent": "confirmation.no",
+    "triggerFulfillment": {
+      "messages": [ {
+        "text": {
+          "text": [ "Please input your details again" ]
+        },
+        "languageCode": "en"
+      } ],
+      "setParameterActions": [ {
+        "parameter": "order_id",
+        "value": null
+      }, {
+        "parameter": "customer_email",
+        "value": null
+      } ]
+    },
+    "targetPage": "Verify Identity",
+    "name": "15c4df45-a997-448b-bf09-8a7efa3e5fe0"
+  } ]
+}
