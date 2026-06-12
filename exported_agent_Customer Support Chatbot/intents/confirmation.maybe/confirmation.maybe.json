@@ -1,0 +1,7 @@
+{
+  "name": "e5ec8221-cba5-4c66-8baa-b7d565e713ff",
+  "displayName": "confirmation.maybe",
+  "priority": 500000,
+  "description": "For when user responds too ambiguously to a prompt",
+  "numTrainingPhrases": 13
+}

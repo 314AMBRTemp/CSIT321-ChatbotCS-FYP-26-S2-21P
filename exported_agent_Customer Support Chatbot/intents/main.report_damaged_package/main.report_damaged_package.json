@@ -1,0 +1,7 @@
+{
+  "name": "4711b032-2edf-45cf-99a4-2edc5811a174",
+  "displayName": "main.report_damaged_package",
+  "priority": 500000,
+  "description": "For when a customer wants to report a damaged package.",
+  "numTrainingPhrases": 15
+}

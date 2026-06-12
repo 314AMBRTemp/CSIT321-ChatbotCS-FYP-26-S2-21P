@@ -48,7 +48,8 @@ def customer_login():
         if customer and bcrypt.check_password_hash(customer.password_hash, password):
             customer.last_login = datetime.utcnow()
             db.session.commit()
-            login_user(customer)
+            remember = True if request.form.get("remember") else False
+            login_user(customer, remember=remember)
             return redirect(url_for("customer.dashboard"))
         else:
             flash("Invalid email or password.")

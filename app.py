@@ -3,13 +3,12 @@ from flask import Flask
 from extensions import db, bcrypt, login_manager
 from models import Admin, Customer
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "serviceAccountKey.json"
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(BASE_DIR, "serviceAccountKey.json")
 
 app = Flask(__name__)
 app.secret_key = "your-flask-secret-key-change-this"
 
-# ── Database ───────────────────────────────────────────────
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(BASE_DIR, 'orders.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 

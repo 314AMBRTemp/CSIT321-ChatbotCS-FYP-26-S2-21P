@@ -1,0 +1,7 @@
+{
+  "name": "027a1a08-43f0-48c2-b4aa-017282cb316b",
+  "displayName": "main.change_delivery_address",
+  "priority": 500000,
+  "description": "For when a customer wants to change the delivery address",
+  "numTrainingPhrases": 17
+}

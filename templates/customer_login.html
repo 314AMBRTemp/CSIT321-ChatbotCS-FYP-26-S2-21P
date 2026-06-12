@@ -52,10 +52,16 @@
 
           <form method="POST">
             <label class="auth_label">Email</label>
-            <input type="email" name="email" class="form-control" placeholder="you@email.com" required>
+            <input type="email" name="email" class="form-control" placeholder="email" required>
             <label class="auth_label">Password</label>
             <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-            <button type="submit" class="btn_auth">Sign In</button>
+            
+            <div class="form-group form-check mb-3" style="padding-left: 0;">
+              <input type="checkbox" id="remember" name="remember" style="width: auto; margin-right: 8px;">
+              <label class="form-check-label" for="remember" style="font-size: 12px; color: #7a87a0; cursor: pointer;">Remember Me</label>
+            </div>
+
+            <button type="submit" class="btn_auth" style="margin-top: 0;">Sign In</button>
           </form>
 
           <div class="auth_foot">

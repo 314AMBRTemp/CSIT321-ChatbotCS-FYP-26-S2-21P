@@ -108,3 +108,17 @@ class Customer(UserMixin, db.Model):
             "created_at": self.created_at.isoformat(),
             "last_login": self.last_login.isoformat() if self.last_login else None
         }
+
+class BotResponse(db.Model):
+    __tablename__ = "bot_responses"
+
+    intent_id    = db.Column(db.String, primary_key=True)
+    response_text = db.Column(db.String, nullable=False)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "intent_id": self.intent_id,
+            "response_text": self.response_text,
+            "updated_at": self.updated_at.isoformat()
+        }

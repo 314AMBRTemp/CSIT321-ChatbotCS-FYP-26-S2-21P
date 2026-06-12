@@ -9,6 +9,7 @@ from google.cloud.dialogflowcx_v3 import (
 from google.protobuf.struct_pb2 import Struct
 import re
 import uuid
+from fuzzywuzzy import process
 
 webhook_bp = Blueprint("webhook", __name__)
 
@@ -36,7 +37,7 @@ def bad_request(msg):
     })
 
 def detect_intent(session_id, text, is_logged_in=False,
-                  customer_email=None, active_order=None):
+                  customer_email=None, customer_name=None, active_order=None):
     client = SessionsClient(client_options={
         "api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"
     })
@@ -50,8 +51,11 @@ def detect_intent(session_id, text, is_logged_in=False,
     params = Struct()
     params["is_logged_in"] = is_logged_in
 
-    if is_logged_in and customer_email:
-        params["customer_email"] = customer_email
+    if is_logged_in:
+        if customer_email:
+            params["customer_email"] = customer_email
+        if customer_name:
+            params["customer_name"] = customer_name
 
     if active_order:
         params["order_id"]           = active_order.order_id
@@ -121,6 +125,7 @@ def chat():
             text=message,
             is_logged_in=is_logged_in,
             customer_email=customer_email,
+            customer_name=current_user.name if is_logged_in else None,
             active_order=active_order
         )
 
@@ -142,6 +147,36 @@ def webhook():
         req        = request.get_json()
         tag        = req.get("fulfillmentInfo", {}).get("tag", "")
         parameters = req.get("sessionInfo",    {}).get("parameters", {})
+        
+        # Try to find the user's text in multiple common Dialogflow locations
+        user_query = req.get("text") or req.get("transcript") or parameters.get("last_user_input", "")
+
+        # ── faq_search (Option 2: Knowledge Base) ──────────
+        if tag == "faq_search":
+            if not user_query:
+                # If text is still missing, check the queryResult path
+                user_query = req.get("queryResult", {}).get("text", "")
+
+            if not user_query:
+                return bad_request("I heard you, but I couldn't process the text for a local search.")
+
+            # Get all local responses from DB
+            all_responses = BotResponse.query.all()
+            if not all_responses:
+                return bad_request("I don't have any local info saved in the dashboard yet.")
+
+            # Fuzzy match
+            choices = {r.intent_id: r.response_text for r in all_responses}
+            best_match, score = process.extractOne(user_query, choices.keys())
+
+            if score > 60: # Lowered threshold slightly to be more helpful
+                return jsonify({
+                    "fulfillmentResponse": {
+                        "messages": [{"text": {"text": [choices[best_match]]}}]
+                    }
+                })
+            else:
+                return bad_request("I'm sorry, I couldn't find a matching answer in my local database.")
 
         # ── track_package (unauthenticated) ────────────────
         if tag == "track_package":
@@ -323,6 +358,36 @@ def webhook():
                 })
             else:
                 return bad_request("We couldn't find that order. Please try again.")
+
+        # ── create_ticket ──────────────────────────────────
+        elif tag == "create_ticket":
+            order_id    = extract_order_id(parameters.get("order_id", ""))
+            issue_type  = parameters.get("issue_type", "General Inquiry")
+            description = parameters.get("description", "No description provided.")
+            email       = parameters.get("customer_email") or (current_user.email if current_user.is_authenticated else None)
+
+            if not order_id or not email:
+                return bad_request("I need an Order ID and Email to create a ticket.")
+
+            ticket = Ticket(
+                order_id=order_id,
+                customer_email=email,
+                issue_type=issue_type,
+                description=description,
+                status="open"
+            )
+            db.session.add(ticket)
+            db.session.commit()
+
+            return jsonify({
+                "fulfillmentResponse": {
+                    "messages": [{"text": {"text": [
+                        f"I've created a support ticket for you. Your ticket ID is #{ticket.ticket_id}. "
+                        "Our team will get back to you soon!"
+                    ]}}]
+                },
+                "sessionInfo": {"parameters": {"ticket_created": True, "ticket_id": ticket.ticket_id}}
+            })
 
     except Exception as e:
         print(f"WEBHOOK ERROR: {e}")

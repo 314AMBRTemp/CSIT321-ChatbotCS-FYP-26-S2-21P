@@ -1,0 +1,7 @@
+{
+  "name": "71b6b337-31c8-4000-a3e0-6dd2b84fbaf5",
+  "displayName": "redirect.live_agent",
+  "priority": 500000,
+  "description": "For when a customer wants to be redirected to a live agent",
+  "numTrainingPhrases": 15
+}

@@ -1,0 +1,7 @@
+{
+  "name": "0a6b5e35-605f-4aec-aec7-a733cc3aea69",
+  "displayName": "confirmation.yes",
+  "priority": 500000,
+  "description": "When user responses positively to a prompt",
+  "numTrainingPhrases": 16
+}
