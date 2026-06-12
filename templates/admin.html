@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard — ShopBot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f0f4f8;
+            color: #333;
+        }
+
+        nav {
+            background: #0057B8;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h1 { font-size: 18px; font-weight: 700; }
+
+        nav .right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.85;
+        }
+
+        nav a:hover { opacity: 1; }
+
+        .container { padding: 32px; }
+
+        h2 {
+            font-size: 18px;
+            color: #0057B8;
+            margin-bottom: 16px;
+            margin-top: 32px;
+        }
+
+        h2:first-child { margin-top: 0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+
+        th {
+            background: #0057B8;
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: #f8fafc; }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.open        { background: #fff3e0; color: #e65100; }
+        .badge.in_progress { background: #e3f2fd; color: #1565c0; }
+        .badge.resolved    { background: #e8f5e9; color: #2e7d32; }
+
+        select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>🛍️ ShopBot Admin</h1>
+    <div class="right">
+        <a href="/admin/config-review" style="margin-right: 20px;">🛡️ Config Review</a>
+        <span>{{ admin.name }}</span>
+        <a href="/admin/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Tickets -->
+    <h2>🎫 Support Tasks</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Task ID</th>
+                <th>Order ID</th>
+                <th>Customer Email</th>
+                <th>Issue Type</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Update</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr id="ticket-{{ ticket.ticket_id }}">
+                <td>#{{ ticket.ticket_id }}</td>
+                <td>{{ ticket.order_id }}</td>
+                <td>{{ ticket.customer_email }}</td>
+                <td>{{ ticket.issue_type }}</td>
+                <td>{{ ticket.description }}</td>
+                <td>
+                    <span class="badge {{ ticket.status }}">
+                        {% if ticket.status == "resolved" %}Solved{% else %}Unsolved{% endif %}
+                    </span>
+                </td>
+                <td>{{ ticket.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td>
+                    <select onchange="updateTicket('{{ ticket.ticket_id }}', this.value)">
+                        <option value="open"     {% if ticket.status == "open" %}selected{% endif %}>Unsolved</option>
+                        <option value="resolved" {% if ticket.status == "resolved" %}selected{% endif %}>Solved</option>
+                    </select>
+                </td>
+                <td>
+                    <button onclick="deleteTicket('{{ ticket.ticket_id }}')" style="color: #ef1f3e; background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:#888;">No tickets yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Orders -->
+    <h2>📦 Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Courier</th>
+                <th>Est. Delivery</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.customer_name }}</td>
+                <td>{{ order.customer_email }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.courier }}</td>
+                <td>{{ order.estimated_delivery }}</td>
+                <td>{{ order.delivery_address }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; color:#888;">No orders yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Chatbot Responses CMS -->
+    <h2>🤖 Chatbot Response Manager</h2>
+    
+    <!-- Template Importer -->
+    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+        <h3 style="font-size: 14px; color: #0057B8; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Domain-Specific Intent Templates</h3>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
+            Quickly populate your chatbot with predefined responses for specific departments.
+        </p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="template-selector" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+                <option value="" disabled selected>Select a template...</option>
+                <option value="Website Navigation">Website Navigation (Products, Contact, FAQ)</option>
+                <option value="Customer Service">Customer Service (Tracking, Cancellation, Accounts)</option>
+                <option value="Sales & Marketing">Sales & Marketing (Discounts, Wholesale, Returns)</option>
+            </select>
+            <button onclick="importTemplate()" style="background: #07bf58; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                Import Template
+            </button>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 40px;">
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+            Override Dialogflow responses for specific intents. The Intent ID must match exactly (e.g., <code>Default Welcome Intent</code>).
+        </p>
+        
+        <table style="box-shadow: none; border: 1px solid #eee; margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th style="width: 250px;">Intent ID</th>
+                    <th>Custom Response Text</th>
+                    <th style="width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="response-table-body">
+                {% for resp in responses %}
+                <tr>
+                    <td><code>{{ resp.intent_id }}</code></td>
+                    <td>{{ resp.response_text }}</td>
+                    <td>
+                        <button onclick="deleteResponse('{{ resp.intent_id }}')" style="color: #ef1f3e; background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid #eee; pt-20; margin-top: 20px; padding-top: 20px;">
+            <div style="flex: 1;">
+                <label style="display: block; font-size: 11px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase;">Intent ID</label>
+                <input type="text" id="new-intent-id" placeholder="e.g. Default Welcome Intent" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+            </div>
+            <div style="flex: 2;">
+                <label style="display: block; font-size: 11px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase;">Custom Response</label>
+                <input type="text" id="new-response-text" placeholder="Enter the new bot reply..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+            </div>
+            <button onclick="saveResponse()" style="background: #0057B8; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">Save Response</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    async function updateTicket(ticketId, status) {
+        const response = await fetch(`/admin/tickets/${ticketId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: status })
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Failed to update ticket. Please try again.");
+        }
+    }
+
+    async function deleteTicket(ticketId) {
+        if (!confirm(`Delete ticket #${ticketId}? This cannot be undone.`)) return;
+
+        const response = await fetch(`/admin/tickets/${ticketId}`, {
+            method: "DELETE"
+        });
+
+        if (response.ok) {
+            document.getElementById(`ticket-${ticketId}`).remove();
+        } else {
+            alert("Failed to delete ticket. Please try again.");
+        }
+    }
+
+    async function importTemplate() {
+        const templateName = document.getElementById('template-selector').value;
+        if (!templateName) {
+            alert("Please select a template first.");
+            return;
+        }
+
+        if (!confirm(`Import ${templateName} responses? This will add or update intents.`)) return;
+
+        const response = await fetch('/admin/import-template', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ template_name: templateName })
+        });
+
+        if (response.ok) {
+            alert("Template imported successfully!");
+            location.reload();
+        } else {
+            alert("Failed to import template.");
+        }
+    }
+
+    async function saveResponse() {
+        const intent_id = document.getElementById('new-intent-id').value.trim();
+        const response_text = document.getElementById('new-response-text').value.trim();
+        
+        if (!intent_id || !response_text) {
+            alert("Please fill in both fields.");
+            return;
+        }
+
+        const response = await fetch('/admin/responses', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ intent_id, response_text })
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Failed to save response.");
+        }
+    }
+
+    async function deleteResponse(intentId) {
+        if (!confirm("Delete this custom response?")) return;
+
+        const response = await fetch(`/admin/responses/${intentId}`, {
+            method: "DELETE"
+        });
+
+        if (response.ok) {
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>

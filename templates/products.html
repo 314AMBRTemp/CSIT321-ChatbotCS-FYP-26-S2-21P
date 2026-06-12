@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}AssistFlow - Products{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+
+<section>
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12 site_banner_inner_products">
+        <div class="banner_heading_inner">
+          <h3 class="text-center">Products</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="products">
+  <div class="container">
+    <div class="row no-gutters">
+      <div class="col-12">
+        <div class="products_list">
+          <div class="row no-gutters">
+
+            <!-- Mega Collection Banner -->
+            <div class="col-md-12">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Mega Animal Cup Collection</h6>
+                <img src="{{ url_for('static', filename='images/products/oTx.webp') }}" alt="Mega Animal Cup Collection" class="product_item_image pb-1 w-100">
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='cat-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Individual Products -->
+            <div class="col-md-6 col-lg-4">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Cat Cup</h6>
+                <img src="{{ url_for('static', filename='images/products/product_square/mTx1.webp') }}" alt="Cat Cup" class="product_item_image pb-1">
+                <div class="price">$15.00 / month</div>
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='cat-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Hedgehog Cup</h6>
+                <img src="{{ url_for('static', filename='images/products/product_square/mtx2.jpeg') }}" alt="Hedgehog Cup" class="product_item_image pb-1">
+                <div class="price">$18.00 / month</div>
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='hedgehog-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Fox Cup</h6>
+                <img src="{{ url_for('static', filename='images/products/product_square/mtx3.jpg') }}" alt="Fox Cup" class="product_item_image pb-1">
+                <div class="price">$20.00 / month</div>
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='fox-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Rabbit Cup</h6>
+                <img src="{{ url_for('static', filename='images/products/product_square/mtx4.jpg') }}" alt="Rabbit Cup" class="product_item_image pb-1">
+                <div class="price">$17.00 / month</div>
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='rabbit-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="product_item gutter_all gutter_bottom_half">
+                <h6 class="title">Bear Cup</h6>
+                <img src="{{ url_for('static', filename='images/products/product_square/mtx5.webp') }}" alt="Bear Cup" class="product_item_image pb-1">
+                <div class="price">$22.00 / month</div>
+                <div class="product_item_footer">
+                  <a href="{{ url_for('product_single', product_id='bear-cup') }}" class="details_link">
+                    <button class="btn btn-primary-soft">View Details</button>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

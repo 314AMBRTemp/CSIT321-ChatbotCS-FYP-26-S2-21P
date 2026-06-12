@@ -1,0 +1,30 @@
+# Secrets — NEVER commit these
+serviceAccountKey.json
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+instance/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# VS Code
+.vscode/
+
+# ngrok
+ngrok.exe
+
+# Dialogflow CX working files
+Agent store/
+*.zip
+
+# Credentials reference
+list.txt

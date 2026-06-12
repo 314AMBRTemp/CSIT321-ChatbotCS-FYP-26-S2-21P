@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}AssistFlow{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+  <link rel="icon"          href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+  <link rel="stylesheet" href="{{ url_for('static', filename='icons/themify-icons/themify-icons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header class="site_header">
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12">
+        <div class="slim_topbar">
+          <h6>Free domestic Singapore office delivery over $500 order</h6>
+        </div>
+      </div>
+    </div>
+    <div class="row no-gutters">
+      <div class="col-12">
+        <nav class="navbar navbar-expand-lg fixed-top pb-0 navbar_top">
+
+          <a class="navbar-brand" href="#" data-toggle="modal" data-target="#icon_modal_location">
+            <img src="{{ url_for('static', filename='images/gmap.png') }}" alt="Google map icon">
+          </a>
+
+          <a href="{{ url_for('webhook.index') }}" class="ml-auto mr-auto">
+            <img src="{{ url_for('static', filename='images/assistflow-logo.png') }}" alt="AssistFlow logo" class="site_logo" style="height:55px;">
+          </a>
+
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navToggler"
+            aria-controls="navToggler" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="ti-menu"></span>
+          </button>
+
+          <div class="collapse navbar-collapse" id="navToggler" style="flex-grow:0;">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item {% block nav_home %}{% endblock %}">
+                <a class="nav-link" href="{{ url_for('webhook.index') }}">Home</a>
+              </li>
+              <li class="nav-item {% block nav_products %}{% endblock %}">
+                <a class="nav-link" href="{{ url_for('products') }}">Products</a>
+              </li>
+              <li class="nav-item {% block nav_faq %}{% endblock %}">
+                <a class="nav-link" href="{{ url_for('faq') }}">FAQ</a>
+              </li>
+              <li class="nav-item {% block nav_contact %}{% endblock %}">
+                <a class="nav-link" href="{{ url_for('contact') }}">Contact</a>
+              </li>
+
+              {% if current_user.is_authenticated %}
+                {# Logged-in: show My Orders + Logout #}
+                <li class="nav-item {% block nav_orders %}{% endblock %}">
+                  <a class="nav-link" href="{{ url_for('customer.dashboard') }}">
+                    <i class="ti-package mr-1"></i>My Orders
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('customer.customer_logout') }}" style="color:#ff6b6b;">
+                    <i class="ti-power-off mr-1"></i>Logout
+                  </a>
+                </li>
+              {% else %}
+                {# Guest: show login icon #}
+                <li class="nav-item {% block nav_login %}{% endblock %}" style="display:flex;align-items:center;">
+                  <a class="nav-link" href="{{ url_for('customer.customer_login') }}" style="padding:0.5rem 1rem;">
+                    <img src="{{ url_for('static', filename='images/login.png') }}" alt="Login" style="height:20px;">
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+{% block content %}{% endblock %}
+
+<!-- ── Footer ──────────────────────────────────────────── -->
+<footer class="site_footer pt-5 pb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <ul class="list_group footer_list">
+          <li class="list_group_item">
+            <a href="{{ url_for('webhook.index') }}" class="footer_logo">
+              <img src="{{ url_for('static', filename='images/assistflow-logo.png') }}" alt="AssistFlow logo">
+            </a>
+          </li>
+          <li class="list_group_item">
+            <p class="py-3">AssistFlow provides a delightful Animal Cup collection designed to bring joy to your mornings.</p>
+          </li>
+          <li class="list_group_item">
+            <p class="pb-0 mb-0 h6"><i class="ti-headphone mr-1"></i>(123) 123 123</p>
+          </li>
+          <li class="list_group_item h6">
+            <p><i class="ti-email mr-1"></i>AssistFlow@gmail.com</p>
+          </li>
+        </ul>
+      </div>
+      <div class="col-md-2">
+        <h6 class="footer_title">Menus</h6>
+        <ul class="list_group footer_list">
+          <li class="list_group_item"><a href="{{ url_for('webhook.index') }}">Home</a></li>
+          <li class="list_group_item"><a href="{{ url_for('products') }}">Products</a></li>
+          <li class="list_group_item"><a href="{{ url_for('faq') }}">FAQ</a></li>
+          <li class="list_group_item"><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-none">
+          <div class="row">
+            <div class="col-12">
+              <div class="row m-2 text-center open_time">
+                <div class="col-1 text-right"><h6><i class="ti-timer"></i></h6></div>
+                <div class="col-11 text-left">
+                  <div class="row">
+                    <div class="col-4"><p>Monday - Friday</p></div>
+                    <div class="col-8"><p>9 AM - 5 PM</p></div>
+                  </div>
+                  <div class="row">
+                    <div class="col-4"><p>Saturday</p></div>
+                    <div class="col-8"><p>Closed</p></div>
+                  </div>
+                  <div class="row">
+                    <div class="col-4"><p>Sunday</p></div>
+                    <div class="col-8"><p>Closed</p></div>
+                  </div>
+                </div>
+              </div>
+              <div class="row m-2 text-center">
+                <div class="col-1 text-right"><h6><i class="ti-truck"></i></h6></div>
+                <div class="col-11 text-left">
+                  <h6 class="font-weight-bold">Mobile services &amp; Emergency: 24/7</h6>
+                </div>
+              </div>
+              <div class="row m-2 mb-0 text-center mt-3 social_icons">
+                <div class="col-12">
+                  <div class="d-flex">
+                    <a href="#" target="_blank" class="mr-3"><i class="ti-instagram"></i></a>
+                    <a href="#" target="_blank"><i class="ti-facebook"></i></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="copyright">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <p>Copyright &copy; AssistFlow 2026</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Location Modal ───────────────────────────────────── -->
+<div class="modal fade flip-vertical" id="icon_modal_location" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body bg-white p-0">
+        <div class="card border-none p-0 m-0">
+          <div class="card-body p-0 m-0">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15500.792579335175!2d103.77281812957297!3d1.3258766559057007!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31da1080893304bd%3A0xc889e76f4e447e42!2sSIM%20Global%20Education!5e0!3m2!1sen!2ssg!4v1779071336728!5m2!1sen!2ssg"
+              width="796" height="432" frameborder="0" style="border:0;" allowfullscreen="true"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer bg-blue d-flex justify-content-center">
+        <div class="avatar avatar-lg">
+          <img src="{{ url_for('static', filename='images/owner-thumb.png') }}" class="rounded-circle" alt="owner">
+        </div>
+        <button type="button" class="btn btn-dark text-white btn-sm" data-dismiss="modal">Go back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat Widget ──────────────────────────────────────── -->
+{% include 'chatbot.html' %}
+
+<!-- ── Scripts ─────────────────────────────────────────── -->
+<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/TweenMax.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

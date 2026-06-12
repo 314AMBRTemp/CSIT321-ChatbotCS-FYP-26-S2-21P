@@ -1,0 +1,272 @@
+<!-- ── Chat Button ──────────────────────────────────────── -->
+<style>
+  .chat-btn {
+    position: fixed; bottom: 20px; right: 20px;
+    background-color: #007bff; color: white;
+    border: none; border-radius: 50%;
+    width: 60px; height: 60px; font-size: 24px;
+    cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 9999;
+  }
+  .chat-window {
+    display: none; position: fixed;
+    bottom: 90px; right: 20px;
+    width: 320px; height: 420px;
+    background-color: white; border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 9999; flex-direction: column; overflow: hidden;
+  }
+  .chat-header {
+    background-color: #007bff; color: white;
+    padding: 15px; font-weight: bold;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chat-header span { cursor: pointer; font-size: 14px; }
+  .chat-body {
+    flex-grow: 1; padding: 15px;
+    overflow-y: auto; background-color: #f9f9f9;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .chat-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.4; }
+  .chat-msg.bot  { background: #e8f0fe; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+  .chat-msg.user { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+  .chat-msg.typing { background: #e8f0fe; color: #999; align-self: flex-start; }
+  .chat-footer {
+    display: flex; padding: 10px; border-top: 1px solid #ddd;
+  }
+  .chat-footer input {
+    flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem;
+  }
+  .chat-footer button {
+    background-color: #007bff; color: white; border: none;
+    margin-left: 5px; padding: 8px 14px; border-radius: 4px; cursor: pointer;
+  }
+  .chat-footer button:disabled { background-color: #aaa; cursor: not-allowed; }
+
+  /* ── Resize handles ─────────────────────────────────────── */
+  .chat-resize-nw {
+    position: absolute; top: 0; left: 0;
+    width: 18px; height: 18px;
+    cursor: nw-resize; z-index: 20;
+  }
+  .chat-resize-nw::after {
+    content: '';
+    position: absolute; top: 4px; left: 4px;
+    width: 8px; height: 8px;
+    border-top: 2px solid rgba(255,255,255,0.55);
+    border-left: 2px solid rgba(255,255,255,0.55);
+  }
+  .chat-resize-n {
+    position: absolute; top: 0; left: 18px; right: 0;
+    height: 6px; cursor: n-resize; z-index: 20;
+  }
+  .chat-resize-w {
+    position: absolute; top: 6px; left: 0; bottom: 0;
+    width: 6px; cursor: w-resize; z-index: 20;
+  }
+
+  {% if current_user.is_authenticated %}
+  .chat-login-prompt { display: none; }
+  {% endif %}
+  .chat-login-prompt {
+    padding: 12px 15px; background: #fff3cd;
+    border-top: 1px solid #ffc107; font-size: 0.8rem; text-align: center;
+  }
+  .chat-login-prompt a { color: #007bff; font-weight: bold; }
+</style>
+
+<button class="chat-btn" id="chatBtn">💬</button>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-resize-nw" data-dir="nw"></div>
+  <div class="chat-resize-n"  data-dir="n"></div>
+  <div class="chat-resize-w"  data-dir="w"></div>
+  <div class="chat-header">
+    <span>🤖 AssistFlow Support</span>
+    <span id="closeChat">✖</span>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+
+  {% if not current_user.is_authenticated %}
+  <div class="chat-login-prompt">
+    <a href="{{ url_for('customer.customer_login') }}">Log in</a> for faster order tracking with your account.
+  </div>
+  {% endif %}
+
+  <div class="chat-footer">
+    <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script>
+  const chatBtn    = document.getElementById('chatBtn');
+  const chatWindow = document.getElementById('chatWindow');
+  const closeChat  = document.getElementById('closeChat');
+  const chatBody   = document.getElementById('chatBody');
+  const chatInput  = document.getElementById('chatInput');
+  const sendBtn    = document.getElementById('sendBtn');
+
+  // ── Persistence Logic ──────────────────────────────────
+  let sessionId = localStorage.getItem('chat_session_id') || ('sess-' + Math.random().toString(36).substr(2, 9));
+  localStorage.setItem('chat_session_id', sessionId);
+
+  let isOpen = localStorage.getItem('chat_is_open') === 'true';
+  let inactivityTimer;
+
+  // Load history from localStorage
+  function loadChatHistory() {
+    const history = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    history.forEach(item => renderMsg(item.text, item.type, false));
+  }
+
+  function saveChatHistory(text, type) {
+    const history = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    history.push({ text, type });
+    localStorage.setItem('chat_history', JSON.stringify(history));
+  }
+
+  function renderMsg(text, type, shouldSave = true) {
+    const div = document.createElement('div');
+    div.className = `chat-msg ${type}`;
+    div.innerHTML = text.replace(/\n/g, '<br>');
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    
+    if (shouldSave) saveChatHistory(text, type);
+    return div;
+  }
+
+  function addMsg(text, type) {
+    const div = renderMsg(text, type, true);
+    if (type === 'user') resetTimer();
+    return div;
+  }
+
+  function resetTimer() {
+    clearTimeout(inactivityTimer);
+    if (!isOpen) return;
+
+    // Warning after 5 minutes
+    inactivityTimer = setTimeout(() => {
+      addMsg("⚠️ Are you still there? This session will time out in 1 minute due to inactivity.", 'bot');
+      
+      // Final timeout after another 1 minute
+      inactivityTimer = setTimeout(() => {
+        addMsg("🔴 Session ended due to inactivity. Please refresh the page to start a new chat.", 'bot');
+        sendBtn.disabled = true;
+        chatInput.disabled = true;
+        chatInput.placeholder = "Session expired.";
+        localStorage.removeItem('chat_history'); // Clear history on expiry
+        localStorage.removeItem('chat_session_id');
+        localStorage.setItem('chat_is_open', 'false');
+      }, 60000); // 1 minute
+
+    }, 300000); // 5 minutes
+  }
+
+  // Initialize
+  loadChatHistory();
+  if (isOpen) {
+    chatWindow.style.display = 'flex';
+    resetTimer();
+  }
+
+  chatBtn.addEventListener('click', () => {
+    isOpen = !isOpen;
+    localStorage.setItem('chat_is_open', isOpen);
+    chatWindow.style.display = isOpen ? 'flex' : 'none';
+    if (isOpen) {
+        resetTimer();
+        if (chatBody.children.length === 0) {
+            addMsg("Hi! 👋 How can I help you today? I can help track orders, update delivery addresses, or raise a support ticket.", 'bot');
+        }
+    } else {
+        clearTimeout(inactivityTimer);
+    }
+  });
+
+  closeChat.addEventListener('click', () => {
+    isOpen = false;
+    localStorage.setItem('chat_is_open', 'false');
+    chatWindow.style.display = 'none';
+    clearTimeout(inactivityTimer);
+  });
+
+  function delay(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+  async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || sendBtn.disabled) return;
+
+    addMsg(message, 'user');
+    chatInput.value = '';
+    sendBtn.disabled = true;
+
+    const typing = renderMsg('...', 'typing', false);
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, session_id: sessionId })
+      });
+      const data = await res.json();
+      typing.remove();
+
+      const replies = data.replies || [data.reply || "Sorry, I didn't catch that."];
+      for (let i = 0; i < replies.length; i++) {
+        if (i > 0) {
+          const t = renderMsg('...', 'typing', false);
+          await delay(600);
+          t.remove();
+        }
+        addMsg(replies[i], 'bot');
+      }
+
+      if (data.session_id) sessionId = data.session_id;
+    } catch (err) {
+      typing.remove();
+      addMsg("⚠️ Connection error. Please try again.", 'bot');
+    } finally {
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+  // ── Resize ───────────────────────────────────────────────
+  const MIN_W = 260, MAX_W = 600;
+  const MIN_H = 300, MAX_H = 700;
+
+  let resizing = false, resizeDir = '';
+  let rsStartX, rsStartY, rsStartW, rsStartH;
+
+  document.querySelectorAll('.chat-resize-nw, .chat-resize-n, .chat-resize-w')
+    .forEach(handle => {
+      handle.addEventListener('mousedown', e => {
+        resizing  = true;
+        resizeDir = handle.dataset.dir;
+        rsStartX  = e.clientX;
+        rsStartY  = e.clientY;
+        rsStartW  = chatWindow.offsetWidth;
+        rsStartH  = chatWindow.offsetHeight;
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+  document.addEventListener('mousemove', e => {
+    if (!resizing) return;
+    const dx = rsStartX - e.clientX;
+    const dy = rsStartY - e.clientY;
+    if (resizeDir === 'nw' || resizeDir === 'w')
+      chatWindow.style.width  = Math.min(MAX_W, Math.max(MIN_W, rsStartW + dx)) + 'px';
+    if (resizeDir === 'nw' || resizeDir === 'n')
+      chatWindow.style.height = Math.min(MAX_H, Math.max(MIN_H, rsStartH + dy)) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => { resizing = false; });
+</script>

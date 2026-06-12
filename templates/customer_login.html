@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}AssistFlow — Sign In{% endblock %}
+{% block nav_login %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth_card          { border-top: 3px solid #344D68; padding: 40px 35px; }
+  .auth_title         { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; text-transform: uppercase; color: #344D68; letter-spacing: 0.05px; margin-bottom: 4px; }
+  .auth_sub           { font-size: 13px; color: #7a87a0; margin-bottom: 28px; }
+  .auth_label         { font-size: 11px; font-weight: 700; color: #111B25; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
+  .auth_card .form-control          { padding-left: 0; background: transparent; margin-bottom: 20px; }
+  .auth_card .form-control:focus    { border-color: #0074f1; box-shadow: none; background: transparent; }
+  .btn_auth           { width: 100%; background: #344D68; color: #fff; border: none; border-radius: 0; padding: 13px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; transition: background .2s; margin-top: 8px; }
+  .btn_auth:hover     { background: #111B25; color: #fff; }
+  .auth_foot          { text-align: center; font-size: 13px; color: #7a87a0; margin-top: 18px; }
+  .auth_foot a        { color: #0074f1; font-weight: 600; text-decoration: none; }
+  .auth_foot a:hover  { text-decoration: underline; }
+  .auth_alert         { background: rgba(239,31,62,0.08); color: #ef1f3e; border-left: 3px solid #ef1f3e; padding: 10px 14px; font-size: 13px; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section>
+  <div class="container-fluid px-0">
+    <div class="row no-gutters">
+      <div class="col-12 site_banner_inner_products">
+        <div class="banner_heading_inner text-center">
+          <h3>My Account &mdash; Sign In</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pt-5 pb-5" style="background:#fff;">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6 offset-md-3 col-lg-4 offset-lg-4">
+        <div class="card auth_card">
+
+          <h2 class="auth_title">Welcome Back</h2>
+          <p class="auth_sub">Sign in to your AssistFlow account</p>
+
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for msg in messages %}
+                <div class="auth_alert">{{ msg }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+
+          <form method="POST">
+            <label class="auth_label">Email</label>
+            <input type="email" name="email" class="form-control" placeholder="email" required>
+            <label class="auth_label">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+            
+            <div class="form-group form-check mb-3" style="padding-left: 0;">
+              <input type="checkbox" id="remember" name="remember" style="width: auto; margin-right: 8px;">
+              <label class="form-check-label" for="remember" style="font-size: 12px; color: #7a87a0; cursor: pointer;">Remember Me</label>
+            </div>
+
+            <button type="submit" class="btn_auth" style="margin-top: 0;">Sign In</button>
+          </form>
+
+          <div class="auth_foot">
+            Don't have an account? <a href="{{ url_for('customer.register') }}">Register here</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
