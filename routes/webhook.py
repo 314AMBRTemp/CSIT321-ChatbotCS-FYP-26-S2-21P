@@ -7,15 +7,24 @@ from google.cloud.dialogflowcx_v3 import (
     DetectIntentRequest, QueryParameters
 )
 from google.protobuf.struct_pb2 import Struct
+from email_service import (
+    send_address_change_email,
+    send_cancellation_email,
+    send_ticket_created_email
+)
 import re
 import uuid
+import os
 from fuzzywuzzy import process
+from dotenv import load_dotenv
+
+load_dotenv()
 
 webhook_bp = Blueprint("webhook", __name__)
 
-SECRET_TOKEN = "6e037887676fca2fe030065b2abc127a91ca899062295c2e58f58d3659f22c27"
-PROJECT_ID   = "csci321-chatbot-for-cs"
-AGENT_ID     = "e7e8fe80-878e-484e-b3d7-76ff1222b47b"
+SECRET_TOKEN = os.getenv("SECRET_TOKEN", "6e037887676fca2fe030065b2abc127a91ca899062295c2e58f58d3659f22c27")
+PROJECT_ID   = os.getenv("PROJECT_ID",   "csci321-chatbot-for-cs")
+AGENT_ID     = os.getenv("AGENT_ID",     "e7e8fe80-878e-484e-b3d7-76ff1222b47b")
 LOCATION     = "asia-southeast1"
 LANGUAGE     = "en"
 
@@ -319,12 +328,13 @@ def webhook():
                     status="open"
                 ))
                 db.session.commit()
+                send_address_change_email(order.customer_email, order_id, new_address)
                 return jsonify({
                     "fulfillmentResponse": {
                         "messages": [{"text": {"text": [
                             f"Your delivery address for {order_id} has been "
                             f"updated to: {new_address}. "
-                            f"A confirmation email will be sent shortly."
+                            f"A confirmation email has been sent to {order.customer_email}."
                         ]}}]
                     },
                     "sessionInfo": {"parameters": {"updated": True}}
@@ -347,11 +357,12 @@ def webhook():
                     status="open"
                 ))
                 db.session.commit()
+                send_cancellation_email(order.customer_email, order_id)
                 return jsonify({
                     "fulfillmentResponse": {
                         "messages": [{"text": {"text": [
                             f"Your order {order_id} has been successfully cancelled. "
-                            f"A confirmation email will be sent shortly."
+                            f"A confirmation email has been sent to {order.customer_email}."
                         ]}}]
                     },
                     "sessionInfo": {"parameters": {"cancelled": True}}
@@ -390,11 +401,13 @@ def webhook():
             )
             db.session.add(ticket)
             db.session.commit()
+            send_ticket_created_email(email, ticket.ticket_id, issue_type, description)
 
             return jsonify({
                 "fulfillmentResponse": {
                     "messages": [{"text": {"text": [
                         f"I've created a support ticket for you. Your ticket ID is #{ticket.ticket_id}. "
+                        f"A confirmation email has been sent to {email}. "
                         "Our team will get back to you soon!"
                     ]}}]
                 },

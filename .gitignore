@@ -25,6 +25,10 @@ ngrok.exe
 # Dialogflow CX working files
 Agent store/
 *.zip
+seed_more.py
 
 # Credentials reference
 list.txt
+
+# Claude project instructions
+*CLAUDE.md
