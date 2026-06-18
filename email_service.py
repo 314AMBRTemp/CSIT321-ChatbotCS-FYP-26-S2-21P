@@ -1,29 +1,25 @@
-import smtplib
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 
 load_dotenv()
 
-GMAIL_ADDRESS      = os.getenv("GMAIL_ADDRESS")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+SENDGRID_API_KEY   = os.getenv("SENDGRID_API_KEY")
+SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")
 
 
 def send_email(to_email, subject, body):
     try:
-        msg = MIMEMultipart()
-        msg["From"]    = GMAIL_ADDRESS
-        msg["To"]      = to_email
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-            server.send_message(msg)
-
-        print(f"Email sent to {to_email}")
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            plain_text_content=body
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Email sent to {to_email} — status {response.status_code}")
         return True
 
     except Exception as e:
