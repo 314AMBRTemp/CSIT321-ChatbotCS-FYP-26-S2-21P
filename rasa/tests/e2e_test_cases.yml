@@ -26,8 +26,6 @@ test_cases:
       - user: "My mother passed away last night"
         assertions:
           - flow_started: compassionate_leave
-      - user: "She was my mother"
-        assertions:
           - slot_was_set:
               - name: relationship
           - action_executed: action_compassionate_leave
@@ -37,8 +35,8 @@ test_cases:
       - user: "My cousin died, is there leave for this?"
         assertions:
           - flow_started: compassionate_leave
-      - user: "my cousin"
-        assertions:
+          - slot_was_set:
+              - name: relationship
           - action_executed: action_compassionate_leave
 
   - test_case: apply for annual leave end to end
@@ -115,3 +113,22 @@ test_cases:
         assertions:
           - flow_started: policy_question
           - action_executed: action_policy_answer
+
+  - test_case: cancelling a leave request with none pending is handled honestly
+    steps:
+      - user: "I'd like to cancel my pending leave request"
+        assertions:
+          - flow_started: cancel_leave
+          - action_executed: action_find_pending_leave
+
+  - test_case: career path advice for a defined pair
+    steps:
+      - user: "What would it take to move into Sales?"
+        assertions:
+          - flow_started: career_path_advice
+      - user: "Sales"
+        assertions:
+          - slot_was_set:
+              - name: target_department
+                value: "Sales"
+          - action_executed: action_career_path_advice
