@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumen &amp; Vale · HRMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#1d2433;--paper:#f5f3ee;--violet:#5b4ddb;--violet-soft:#ece9ff;--teal:#0f8a7e;--teal-soft:#e1f5ee;--amber:#b06a12;--amber-soft:#faeeda;--red:#a32d2d;--red-soft:#fcebeb;--mute:#8a8778;--card:#fffefb;--line:#e7e3d8;--green:#3b6d11;--green-soft:#eaf3de}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+
+/* ── Top nav ─────────────────────────── */
+.topnav{background:var(--ink);color:#fff;padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.topnav-left{display:flex;align-items:center;gap:28px}
+.topnav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.topnav-mark{width:30px;height:30px;border-radius:8px;background:var(--violet);display:grid;place-items:center;font-family:Georgia,serif;font-style:italic;font-size:14px}
+.topnav-links{display:flex;gap:4px}
+.topnav-links button{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 14px;font-size:13.5px;font-family:inherit;cursor:pointer;border-radius:8px;transition:background .15s,color .15s}
+.topnav-links button:hover{background:rgba(255,255,255,.08);color:#fff}
+.topnav-links button.active{background:rgba(255,255,255,.12);color:#fff;font-weight:600}
+.topnav-right{display:flex;align-items:center;gap:14px}
+.topnav-avatar{width:32px;height:32px;border-radius:50%;background:var(--violet);display:grid;place-items:center;font-weight:600;font-size:12px;cursor:pointer}
+.topnav-name{font-size:13px;font-weight:500}
+.topnav-logout{background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit}
+
+/* ── Pages ────────────────────────────── */
+.page{max-width:1000px;margin:0 auto;padding:28px 32px 100px}
+.page-title{font-size:22px;font-weight:700;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--mute);margin-bottom:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:var(--card);border:.5px solid var(--line);border-radius:14px;padding:18px 20px}
+.stat-label{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:28px;font-weight:700;margin-top:4px}
+.stat-value.v-teal{color:var(--teal)}.stat-value.v-violet{color:var(--violet)}.stat-value.v-amber{color:var(--amber)}
+.section-title{font-size:16px;font-weight:700;margin-bottom:14px}
+.profile-card{background:var(--card);border:.5px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:22px;align-items:flex-start;margin-bottom:28px}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;font-weight:700;font-size:22px;flex-shrink:0}
+.profile-info{flex:1}.profile-name{font-size:18px;font-weight:700}.profile-role{font-size:13.5px;color:var(--mute);margin-top:2px}
+.profile-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px 24px;margin-top:14px}
+.pd-item{font-size:13px}.pd-label{color:var(--mute)}.pd-value{font-weight:600;margin-top:1px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:middle}
+.badge-green{background:var(--green-soft);color:var(--green)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
+.table-card{background:var(--card);border:.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:28px}
+.table-card table{width:100%;border-collapse:collapse;font-size:13.5px}
+.table-card th{text-align:left;padding:12px 18px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);background:#faf8f3;border-bottom:.5px solid var(--line)}
+.table-card td{padding:12px 18px;border-bottom:.5px solid #f0ece4}.table-card tr:last-child td{border-bottom:none}
+.status-pill{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-block}
+.s-approved{background:var(--green-soft);color:var(--green)}.s-pending{background:var(--amber-soft);color:var(--amber)}.s-rejected{background:var(--red-soft);color:var(--red)}
+.form-card{background:var(--card);border:.5px solid var(--line);border-radius:14px;padding:22px;margin-bottom:28px}
+.form-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px}
+.form-group label{font-size:12.5px;font-weight:600;color:var(--mute)}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;font-family:inherit;background:var(--paper);color:var(--ink)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:2px solid var(--violet);outline-offset:1px}
+.form-group textarea{resize:vertical;min-height:60px}
+.btn-submit{background:var(--violet);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;z-index:200;display:none;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.toast.show{display:block;animation:fadeup .3s ease}
+@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%)}}
+
+/* ── Login ─────────────────────────────── */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--paper)}
+.login-box{background:var(--card);border:.5px solid var(--line);border-radius:20px;padding:36px;width:400px;max-width:92vw;text-align:center}
+.login-mark{width:56px;height:56px;border-radius:16px;background:var(--violet);color:#fff;display:inline-grid;place-items:center;font-weight:700;font-size:24px;font-family:Georgia,serif;font-style:italic;margin-bottom:14px}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.login-box p{font-size:13.5px;color:var(--mute);margin-bottom:22px;line-height:1.5}
+.login-users{display:flex;flex-direction:column;gap:10px;text-align:left}
+.login-user{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;cursor:pointer;font-family:inherit;background:var(--card);transition:border-color .15s}
+.login-user:hover{border-color:var(--violet)}
+.lu-av{width:42px;height:42px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px;flex-shrink:0}
+.lu-name{font-weight:650;font-size:14.5px}.lu-role{font-size:12px;color:var(--mute);margin-top:1px}
+
+/* ── Chat widget (improved) ────────────── */
+.chat-fab{position:fixed;right:28px;bottom:28px;width:56px;height:56px;border-radius:50%;background:var(--violet);color:#fff;border:none;cursor:pointer;z-index:100;display:grid;place-items:center;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:22px;box-shadow:0 4px 20px rgba(91,77,219,.35);transition:transform .2s}
+.chat-fab:hover{transform:scale(1.08)}.chat-fab.hidden{display:none}
+.chat-window{position:fixed;right:28px;bottom:96px;width:420px;height:560px;background:var(--card);border:none;border-radius:20px;display:none;flex-direction:column;z-index:100;box-shadow:0 16px 60px rgba(0,0,0,.22);overflow:hidden}
+.chat-window.open{display:flex}
+.chat-header{padding:16px 20px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.chat-header-left{display:flex;align-items:center;gap:11px}
+.chat-header-mark{width:34px;height:34px;border-radius:10px;background:var(--violet);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;font-family:Georgia,serif;font-style:italic}
+.chat-header-name{font-weight:700;font-size:14.5px;color:#fff}
+.chat-header-sub{font-size:11px;color:rgba(255,255,255,.5)}
+.chat-close{background:none;border:none;font-size:18px;cursor:pointer;color:rgba(255,255,255,.5);padding:4px;line-height:1;transition:color .15s}
+.chat-close:hover{color:#fff}
+.chat-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.chat-body::-webkit-scrollbar{width:5px}.chat-body::-webkit-scrollbar-thumb{background:#d2cec3;border-radius:5px}
+.chat-empty{text-align:center;margin:auto 0;padding:16px}
+.chat-empty-mark{width:48px;height:48px;border-radius:14px;background:var(--violet);color:#fff;display:inline-grid;place-items:center;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:20px;margin-bottom:10px}
+.chat-empty-title{font-size:17px;font-weight:700;font-family:Georgia,serif}
+.chat-empty-body{font-size:13px;color:var(--mute);margin:7px 0 16px;line-height:1.5}
+.chat-chips{display:flex;flex-direction:column;gap:7px}
+.chat-chip{text-align:left;background:var(--card);border:.5px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--ink);transition:border-color .15s,background .15s}
+.chat-chip:hover{border-color:var(--violet);background:var(--violet-soft)}
+.cb-user{align-self:flex-end;max-width:80%}
+.cb-user-bubble{background:var(--violet);color:#fff;padding:10px 15px;border-radius:16px 16px 4px 16px;font-size:13.5px;line-height:1.5}
+.cb-bot{display:flex;gap:9px;align-items:flex-start;max-width:88%}
+.cb-bot-mark{width:28px;height:28px;border-radius:8px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;font-family:Georgia,serif;font-style:italic;flex-shrink:0;margin-top:2px}
+.cb-bot-bubble{background:var(--card);border:.5px solid var(--line);border-radius:4px 16px 16px 16px;padding:12px 15px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cb-bot-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.cb-bot-tag.personal{color:var(--violet)}.cb-bot-tag.action{color:var(--teal)}.cb-bot-tag.empathy{color:var(--amber)}
+.cb-bot-text{font-size:13.5px;line-height:1.6;color:#2a2f3c;white-space:pre-wrap}
+.cb-source{margin-top:9px;padding-top:8px;border-top:.5px solid var(--line);font-size:11px;color:var(--teal);font-weight:600}
+.cb-related{margin-top:9px;padding-top:8px;border-top:.5px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.cb-related-label{font-size:10px;color:var(--mute);width:100%;margin-bottom:2px}
+.cb-followup{background:var(--paper);border:.5px solid var(--line);border-radius:8px;padding:5px 10px;font-size:11.5px;cursor:pointer;font-family:inherit;color:var(--ink);transition:border-color .15s,background .15s}
+.cb-followup:hover{border-color:var(--violet);background:var(--violet-soft)}
+.cb-action-card{margin-top:9px;background:var(--teal-soft);border-radius:9px;padding:10px 12px;font-size:12px}
+.cb-action-card strong{color:var(--teal)}
+.cb-action-btn{margin-top:8px;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* typing indicator */
+.cb-typing{display:flex;gap:9px;align-items:flex-end;max-width:88%}
+.cb-typing-dots{background:var(--card);border:.5px solid var(--line);border-radius:4px 16px 16px 16px;padding:14px 18px;display:flex;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cb-typing-dots span{width:7px;height:7px;border-radius:50%;background:#b5b0a3;animation:bop 1.2s ease-in-out infinite}
+.cb-typing-dots span:nth-child(2){animation-delay:.15s}.cb-typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* input area */
+.chat-input-area{padding:14px;border-top:.5px solid var(--line);background:var(--card)}
+.chat-input-row{display:flex;gap:8px;align-items:center}
+.chat-input-row input{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:11px 15px;font-size:13.5px;font-family:inherit;background:var(--paper);color:var(--ink);transition:border-color .2s}
+.chat-input-row input:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(91,77,219,.12)}
+.chat-input-row input::placeholder{color:#b0ac9f}
+.chat-send{width:40px;height:40px;border-radius:50%;background:var(--violet);color:#fff;border:none;cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:transform .15s,opacity .15s}
+.chat-send:hover{transform:scale(1.06)}.chat-send:disabled{opacity:.35;cursor:default;transform:none}
+.chat-send svg{width:18px;height:18px}
+.chat-hint{font-size:10.5px;color:var(--mute);margin-top:8px;text-align:center}
+
+@keyframes msgfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg-anim{animation:msgfade .25s ease both}
+@media(max-width:500px){.chat-window{right:0;bottom:0;width:100%;height:100%;border-radius:0}.chat-fab{right:16px;bottom:16px}}
+</style>
+</head>
+<body>
+<div id="login-screen" class="login-screen"><div class="login-box"><div class="login-mark">iv</div><h1>Lumen &amp; Vale HRMS</h1><p>Sign in to access your HR portal and AskIvy, your policy assistant.</p><div class="login-users" id="login-users"></div></div></div>
+<div id="app-shell" style="display:none;">
+  <nav class="topnav"><div class="topnav-left"><div class="topnav-brand"><div class="topnav-mark">iv</div> Lumen &amp; Vale</div><div class="topnav-links"><button class="active" onclick="showPage('dashboard')">Dashboard</button><button onclick="showPage('leave')">Leave</button><button onclick="showPage('profile')">My profile</button></div></div><div class="topnav-right"><span class="topnav-name" id="nav-name"></span><div class="topnav-avatar" id="nav-avatar"></div><button class="topnav-logout" onclick="doLogout()">Sign out</button></div></nav>
+  <div id="page-dashboard" class="page"></div><div id="page-leave" class="page" style="display:none;"></div><div id="page-profile" class="page" style="display:none;"></div>
+</div>
+<button class="chat-fab hidden" id="chat-fab" onclick="toggleChat()">iv</button>
+<div class="chat-window" id="chat-window">
+  <div class="chat-header"><div class="chat-header-left"><div class="chat-header-mark">iv</div><div><div class="chat-header-name">AskIvy</div><div class="chat-header-sub">HR policy assistant</div></div></div><button class="chat-close" onclick="toggleChat()">✕</button></div>
+  <div class="chat-body" id="chat-body"></div>
+  <div class="chat-input-area">
+    <div class="chat-input-row">
+      <input id="chat-input" placeholder="Ask anything about HR…" autocomplete="off" />
+      <button class="chat-send" id="chat-send" onclick="chatAsk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button>
+    </div>
+    <div class="chat-hint">Try: "My cousin passed away" or "I'm having a baby soon"</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════
+const USERS={
+  sarah:{id:"sarah",initials:"ST",name:"Sarah Tan",role:"Principal Engineer",department:"Engineering",startDate:"2019-03-04",tenureYears:7,maritalStatus:"Married",recentEvent:"Gave birth on 2026-05-10",annualLeaveEntitlement:21,annualLeaveTaken:9,probation:false,salaryBand:"Band 6",
+    leaveHistory:[{type:"Annual",from:"2026-01-13",to:"2026-01-17",days:5,status:"Approved"},{type:"Sick",from:"2026-03-04",to:"2026-03-05",days:2,status:"Approved"},{type:"Annual",from:"2026-04-21",to:"2026-04-24",days:4,status:"Approved"}]},
+  marcus:{id:"marcus",initials:"MR",name:"Marcus Reyes",role:"Junior Designer",department:"Product",startDate:"2026-02-02",tenureYears:0,maritalStatus:"Single",recentEvent:"Recently joined — still in probation",annualLeaveEntitlement:14,annualLeaveTaken:3,probation:true,salaryBand:"Band 2",
+    leaveHistory:[{type:"Annual",from:"2026-05-02",to:"2026-05-02",days:1,status:"Approved"},{type:"Sick",from:"2026-05-20",to:"2026-05-20",days:1,status:"Approved"},{type:"Annual",from:"2026-06-30",to:"2026-06-30",days:1,status:"Pending"}]}
+};
+function computeFacts(u){const r=u.annualLeaveEntitlement-u.annualLeaveTaken;const s=14-u.leaveHistory.filter(l=>l.type==="Sick").reduce((a,l)=>a+l.days,0);const b=parseInt(u.salaryBand.replace(/\D/g,""),10);const n=u.probation?"1 week":(b>=4?"8 weeks":"4 weeks");return{annualLeaveRemaining:r,sickLeaveRemaining:s,eligibleForCarryOver:u.tenureYears>2,eligibleForParental:u.tenureYears>=1,notice:n,bonusEligible:!u.probation};}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART RESPONSE ENGINE v2 — situation-aware
+// ═══════════════════════════════════════════════════════════════════════════
+function generateResponse(question, user) {
+  const q = question.toLowerCase().trim();
+  const f = computeFacts(user);
+  const name = user.name.split(" ")[0];
+
+  // ── SITUATION DETECTION (maps life events → policies) ─────────────
+  const situations = [
+    { patterns: [/pass(ed)?\s*(away|on)/,/died/,/death/,/funeral/,/bereav/,/mourn/,/loss\b.*\b(family|parent|mother|father|wife|husband|spouse|child|sibling|brother|sister|cousin|grandparent|grandmother|grandfather)/,/\b(family|parent|mother|father|wife|husband|spouse|child|sibling|brother|sister|cousin|grand)\b.*\b(pass|died|death|loss|gone)/],
+      respond: () => ({
+        text: `I'm really sorry for your loss, ${name}. Under our compassionate leave policy, you're entitled to 5 days of paid compassionate leave for the death of an immediate family member (spouse, parent, child, sibling, or grandparent), or 3 days for extended family (including cousins, uncles, aunts). The leave should be taken within 2 weeks of the bereavement.\n\nYou have ${f.annualLeaveRemaining} annual leave days remaining if you need additional time beyond that.`,
+        source: "Compassionate Leave, Annual Leave", personal: true, tag: "empathy",
+        followups: ["How do I apply for compassionate leave?", "Can I extend it with annual leave?"]
+      })
+    },
+    { patterns: [/pregnan/,/expecting\s*(a)?\s*(baby|child)/,/having\s*(a)?\s*(baby|child)/,/baby\s*(is\s*)?(coming|due|on the way)/,/going\s*to\s*(be\s*a|have\s*a)\s*(mom|mum|dad|parent|mother|father)/],
+      respond: () => {
+        const eligible = f.eligibleForParental;
+        let text = `Congratulations, ${name}! Here's what you need to know:\n\n`;
+        if (eligible) {
+          text += `You're eligible for parental leave (you've been here ${user.tenureYears} years, well over the 12-month minimum). Birth mothers get 16 weeks paid; partners get 4 weeks paid.`;
+          if (user.role.includes("Principal")) text += ` As a Principal Engineer, you also get an extra 2 weeks of flexible return-to-work leave.`;
+          text += `\n\nAfter your leave, you can request up to 3 months of fully-remote work to help with the transition back.`;
+        } else {
+          text += `Since you've been with us for less than 12 months, you're not yet eligible for paid parental leave under our policy. I'd strongly recommend speaking with HR directly — they may be able to discuss other options with you.`;
+        }
+        return { text, source: "Parental Leave, Work From Home / Hybrid", personal: true, tag: "personal",
+          followups: eligible ? ["How do I apply for parental leave?", "Can I work from home after?", "What about my annual leave?"] : ["What other leave do I have?", "Talk to HR"]
+        };
+      }
+    },
+    { patterns: [/feel(ing)?\s*(sick|ill|unwell|terrible|awful)/,/not\s*feel(ing)?\s*well/,/i('m|\s*am)\s*(sick|ill|unwell)/,/came?\s*down\s*with/,/caught\s*(a\s*)?flu|cold|covid|fever/,/food\s*poisoning/,/under\s*the\s*weather/],
+      respond: () => ({
+        text: `Sorry to hear you're not well, ${name}. You have ${f.sickLeaveRemaining} sick leave days remaining this year (out of 14). You can take the day off — just notify your manager and HR by 9:00 AM.\n\nIf you're out for more than 2 consecutive days, you'll need a medical certificate. Take care of yourself!`,
+        source: "Sick Leave", personal: true, tag: "empathy",
+        followups: ["I need to take sick leave today", "What if I run out of sick leave?"]
+      })
+    },
+    { patterns: [/getting\s*married/,/wedding/,/tying\s*the\s*knot/,/marriage\s*leave/],
+      respond: () => ({
+        text: `Congratulations, ${name}! While we don't have a separate marriage leave category, you can use your annual leave for your wedding. You currently have ${f.annualLeaveRemaining} annual leave days remaining.${f.eligibleForCarryOver ? " And since you've been here over 2 years, you can carry over up to 5 unused days if you need to save up." : ""}\n\nI'd suggest planning your leave in advance with your manager so there are no surprises.`,
+        source: "Annual Leave", personal: true, tag: "personal",
+        followups: ["How do I apply for annual leave?", "Can I carry over leave to next year?"]
+      })
+    },
+    { patterns: [/think(ing)?\s*(of|about)\s*(leav|resign|quit)/,/want\s*to\s*(leave|resign|quit)/,/hand(ing)?\s*(in)?\s*(my)?\s*(notice|resignation)/],
+      respond: () => ({
+        text: `I understand, ${name}. Here's what you'd need to know:\n\nYour notice period is ${f.notice}${user.probation ? " (since you're still in probation)" : ` (based on your salary band ${user.salaryBand})`}. You'd need to submit a written resignation letter or formal notice through the HRMS portal.\n\nYour ${f.annualLeaveRemaining} remaining annual leave days would be paid out on your final payslip. ${f.bonusEligible ? "Note that if you're serving notice on the bonus payment date (March), you won't be eligible for the performance bonus." : ""}\n\nThis is a big decision — feel free to speak with HR confidentially if you want to talk things through first.`,
+        source: "Resignation & Notice, Annual Leave, Performance Bonus", personal: true, tag: "personal",
+        followups: ["What happens to my leave?", "What about my bonus?"]
+      })
+    },
+    { patterns: [/child\s*(is\s*)?(sick|ill|unwell)/,/kid\s*(is\s*)?(sick|ill)/,/take\s*care\s*of\s*(my\s*)?(sick\s*)?(child|kid|son|daughter)/],
+      respond: () => ({
+        text: `Sorry to hear that, ${name}. You can use your sick leave for child care — you have ${f.sickLeaveRemaining} days remaining. For absences over 2 consecutive days, a medical certificate for your child would be needed.\n\nAlternatively, if you'd prefer to save your sick days, you could use annual leave instead (you have ${f.annualLeaveRemaining} days left), or work from home if your manager agrees.`,
+        source: "Sick Leave, Annual Leave, Work From Home / Hybrid", personal: true, tag: "empathy",
+        followups: ["I'd like to take sick leave today", "Can I work from home instead?"]
+      })
+    },
+  ];
+
+  // Check situations first
+  for (const sit of situations) {
+    for (const pat of sit.patterns) {
+      if (pat.test(q)) return sit.respond();
+    }
+  }
+
+  // ── LEAVE APPLICATION ─────────────────────────────────────────────
+  if (/\b(apply|request|take|book|submit|want)\b.*\b(leave|day|days off|time off|annual|sick)\b/.test(q)) {
+    const dm = q.match(/(\d+)\s*(day|days)/i); const days = dm ? parseInt(dm[1],10) : 1;
+    const isSick = /sick/.test(q); const type = isSick ? "Sick" : "Annual";
+    const bal = isSick ? f.sickLeaveRemaining : f.annualLeaveRemaining;
+    if (days > bal) return { text: `You're asking for ${days} day${days>1?"s":""} of ${type.toLowerCase()} leave, but you have ${bal} remaining. You'd be ${days-bal} over your balance. Check with HR about unpaid leave options, or adjust the number of days.`, source: type + " Leave", personal: true, followups: ["What other leave do I have?"] };
+    return { text: `Sure! You have ${bal} days of ${type.toLowerCase()} leave remaining, so ${days} day${days>1?"s":""} is no problem. I've prepared the request below — hit submit and it'll go to your manager for approval.`, source: type + " Leave", personal: true, isAction: true, actionType: type, actionDays: days, followups: [] };
+  }
+
+  // ── KEYWORD-BASED POLICY QUESTIONS ────────────────────────────────
+  // Annual leave
+  if (/how\s*many.*(annual|leave|day).*(left|remaining|have|balance)/i.test(q) || (/annual\s*leave/.test(q) && /\b(my|i|left|balance|how)\b/.test(q))) {
+    return { text: `You have ${f.annualLeaveRemaining} days of annual leave remaining, ${name}. Your tier gives you ${user.annualLeaveEntitlement} days (based on ${user.tenureYears<1?"under 1 year":user.tenureYears+" years"} of service), and you've used ${user.annualLeaveTaken} so far.`, source: "Annual Leave", personal: true, followups: ["Can I carry over unused leave?", "I want to apply for leave"] };
+  }
+  // Parental
+  if (/parental|maternity|paternity/.test(q) && /\b(my|i|am i|eligible|can i|do i)\b/.test(q)) {
+    if (f.eligibleForParental) { let x = user.role.includes("Principal") ? " Plus an extra 2 weeks of flexible return-to-work leave for Principal Engineers and above." : "";
+      return { text: `Yes, you're eligible, ${name}! With ${user.tenureYears} years of service (minimum is 12 months), you qualify. Birth mothers get 16 weeks paid; partners get 4 weeks paid.${x}`, source: "Parental Leave", personal: true, followups: ["Can I work from home after?", "How do I apply?"] };
+    }
+    return { text: `You're not yet eligible, ${name}. The policy requires 12 months of continuous service, and you started ${user.startDate}. Speak with HR — they may have other options.`, source: "Parental Leave", personal: true, followups: ["What leave do I have?"] };
+  }
+  if (/parental|maternity|paternity/.test(q)) { return { text: `Parental leave is available to employees with at least 12 months of service. Birth mothers get 16 weeks paid; partners get 4 weeks. Principal Engineers and above also get 2 extra weeks of flexible return-to-work leave.`, source: "Parental Leave", personal: false, followups: ["Am I eligible?", "What about work from home after?"] }; }
+  // Carry over
+  if (/carry.*(over|forward)|roll.*(over|forward)|unused.*leave/.test(q)) {
+    if (/\b(can i|my|i)\b/.test(q)) {
+      return f.eligibleForCarryOver
+        ? { text: `Yes, ${name} — with ${user.tenureYears} years of service, you can carry over up to 5 unused days into next year. They expire on 31 March. You currently have ${f.annualLeaveRemaining} days remaining.`, source: "Annual Leave", personal: true, followups: ["How many leave days do I have?"] }
+        : { text: `Unfortunately, carry-over requires more than 2 years of service. Since you started ${user.startDate}, you're not yet eligible. Unused leave resets at year-end.`, source: "Annual Leave", personal: true, followups: ["How many leave days do I have?"] };
+    }
+    return { text: `Employees with over 2 years of service can carry over up to 5 unused annual leave days. Carried-over days expire 31 March. Under 2 years: no carry-over.`, source: "Annual Leave", personal: false, followups: ["Can I carry over my leave?"] };
+  }
+  // Notice / resign
+  if (/notice|resign|quit/.test(q) && !/think/.test(q)) {
+    if (/\b(my|i|do i)\b/.test(q)) { return { text: `Your notice period is ${f.notice}, ${name}. ${user.probation ? "Since you're in probation, it's just 1 week." : `Band ${user.salaryBand.replace("Band ","")} requires ${f.notice}.`} Untaken annual leave is paid out.`, source: "Resignation & Notice", personal: true, followups: ["What happens to my bonus?", "What about my remaining leave?"] }; }
+    return { text: `Notice periods: Probation = 1 week. Confirmed Bands 1–3 = 4 weeks. Confirmed Bands 4+ = 8 weeks. Untaken annual leave is paid out on departure.`, source: "Resignation & Notice", personal: false, followups: ["What's my notice period?"] };
+  }
+  // Sick leave
+  if (/sick\s*(leave|day)/.test(q)) {
+    if (/\b(my|i|how many)\b/.test(q)) { return { text: `You have ${f.sickLeaveRemaining} sick leave days remaining, ${name}. Total entitlement is 14 per year. MC needed for absences over 2 consecutive days. No carry-over.`, source: "Sick Leave", personal: true, followups: ["I want to take sick leave"] }; }
+    return { text: `14 days paid sick leave per year. MC required for absences over 2 consecutive days. No carry-over.`, source: "Sick Leave", personal: false, followups: ["How many sick days do I have left?"] };
+  }
+  // WFH
+  if (/wfh|work\s*(from\s*home|remote)|hybrid|on.?site/.test(q)) {
+    if (/\b(can i|my|i)\b/.test(q)) {
+      if (user.probation) return { text: `During probation, you need to be on-site at least 4 days per week, ${name}. Once confirmed, you can work remotely up to 3 days.`, source: "Work From Home / Hybrid", personal: true, followups: ["When does my probation end?"] };
+      let x = (user.department==="Engineering" && /birth/.test(user.recentEvent.toLowerCase())) ? " And since you're in Engineering returning from parental leave, you can request fully-remote for up to 3 months." : "";
+      return { text: `You can work remotely up to 3 days per week with manager approval, ${name}. Log remote days in the HRMS.${x}`, source: "Work From Home / Hybrid", personal: true, followups: ["Can I go fully remote?"] };
+    }
+    return { text: `Hybrid model: up to 3 remote days/week with manager approval. Probation: on-site 4+ days. Engineering staff post-parental-leave can request fully-remote for up to 3 months.`, source: "Work From Home / Hybrid", personal: false, followups: ["Can I work from home?"] };
+  }
+  // Bonus
+  if (/bonus/.test(q)) {
+    if (/\b(my|i|am i|eligible)\b/.test(q)) {
+      return f.bonusEligible
+        ? { text: `Yes, you're eligible, ${name}. You're past probation, which is the key requirement. Bonuses are paid each March, tied to your performance rating and ${user.salaryBand}. You must be employed and not serving notice on the payment date.`, source: "Performance Bonus", personal: true, followups: [] }
+        : { text: `Not yet, ${name} — the bonus requires passing probation first. Once confirmed, you'll be eligible starting next March.`, source: "Performance Bonus", personal: true, followups: ["When does my probation end?"] };
+    }
+    return { text: `Annual discretionary bonus paid each March. Must be past probation and employed (not serving notice) on payment date. Tied to performance rating and salary band.`, source: "Performance Bonus", personal: false, followups: ["Am I eligible for a bonus?"] };
+  }
+  // Expense
+  if (/expense|reimburse|claim|receipt/.test(q)) { return { text: `Submit within 30 days with a valid receipt. Manager sign-off required. Reimbursed in the next payroll cycle after approval.`, source: "Expense & Reimbursement", personal: false, followups: [] }; }
+  // Conduct
+  if (/conduct|harass|integrity|bully/.test(q)) { return { text: `All staff must act with integrity and respect. Harassment or bullying of any kind is grounds for disciplinary action. Confidential info must not be shared outside the company. Report concerns to HR.`, source: "Code of Conduct, Anti-Harassment & Equal Opportunity", personal: false, followups: [] }; }
+  // Compassionate
+  if (/compassionate|bereavement/.test(q)) { return { text: `Compassionate leave: 5 days paid for immediate family (spouse, parent, child, sibling, grandparent), 3 days for extended family. Must be taken within 2 weeks of the bereavement.`, source: "Compassionate Leave", personal: false, followups: [] }; }
+  // Probation
+  if (/probation/.test(q)) {
+    if (/\b(my|i|am i|when)\b/.test(q)) {
+      return user.probation
+        ? { text: `You're currently in probation, ${name} (started ${user.startDate}). Probation is 6 months, so your review should be around ${new Date(new Date(user.startDate).getTime()+180*86400000).toISOString().split("T")[0]}. During probation: 1-week notice, no bonus eligibility, and on-site 4+ days/week.`, source: "Probation", personal: true, followups: ["What changes after probation?"] }
+        : { text: `You've already passed probation, ${name} — you're confirmed! All standard policies apply to you in full.`, source: "Probation", personal: true, followups: [] };
+    }
+    return { text: `All new employees serve 6 months probation. During probation: 1-week notice period, no bonus eligibility, on-site 4+ days/week. Reviews at 3 and 6 months.`, source: "Probation", personal: false, followups: ["Am I still in probation?"] };
+  }
+  // Where / find
+  if (/where.*(find|policy)|find.*(policy|leave|handbook)/.test(q)) { return { text: `All HR policies are available right here! Ask about any topic — leave, WFH, resignation, bonuses, expenses, code of conduct — and I'll pull the relevant policy. I can also check your personal eligibility or help you apply for leave.`, source: null, personal: false, followups: ["How many leave days do I have?", "What's my notice period?"] }; }
+  // Greeting
+  if (/^(hi|hello|hey|good\s*(morning|afternoon|evening)|sup)\b/.test(q)) { return { text: `Hi ${name}! I'm AskIvy, your HR assistant. I can answer policy questions, check your personal eligibility, help you apply for leave, or guide you through situations like bereavement, illness, or planning parental leave. What can I help with?`, source: null, personal: false, followups: ["How many leave days do I have?", "What's the WFH policy?", "Am I eligible for a bonus?"] }; }
+  // What can you do
+  if (/what\s*(can|do)\s*you\s*(do|help|know)|help\s*me/.test(q)) { return { text: `I can help with quite a lot, ${name}! You can ask me about:\n\n• Leave (annual, sick, parental, compassionate)\n• Work from home / hybrid policy\n• Resignation & notice periods\n• Bonuses and compensation\n• Expenses & reimbursement\n• Code of conduct\n\nI also understand situations — try telling me "I'm having a baby soon" or "my cousin passed away" and I'll pull together everything relevant. And I can help you apply for leave right from here!`, source: null, personal: false, followups: ["How many leave days do I have?", "Am I eligible for parental leave?"] }; }
+
+  // ── FUZZY FALLBACK — try to partial-match ─────────────────────────
+  const topics = [
+    { keys: ["leave","day off","time off","vacation","holiday","pto"], q: "How many leave days do I have?" },
+    { keys: ["home","remote","office","hybrid"], q: "Can I work from home?" },
+    { keys: ["pay","salary","wage","compensation","raise"], q: "Am I eligible for a bonus?" },
+    { keys: ["quit","go","move on","new job"], q: "What's my notice period?" },
+  ];
+  for (const t of topics) { if (t.keys.some(k => q.includes(k))) { return generateResponse(t.q, user); } }
+
+  // ── CATCH-ALL ─────────────────────────────────────────────────────
+  return { text: `I'm not sure I found the right policy for that, ${name}. I understand questions about leave (annual, sick, parental, compassionate), work-from-home, resignation, bonuses, expenses, and code of conduct.\n\nI also understand situations — you can say things like "my cousin passed away" or "I'm feeling sick" and I'll figure out the right policy.\n\nCould you try rephrasing?`, source: null, personal: false, followups: ["What can you help me with?", "How many leave days do I have?"] };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let currentUser=null,chatMessages=[],chatOpen=false;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH & PAGES (same as before, compact)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildLoginScreen(){document.getElementById("login-users").innerHTML=Object.values(USERS).map(u=>`<button class="login-user" onclick="doLogin('${u.id}')"><div class="lu-av">${u.initials}</div><div><div class="lu-name">${u.name}</div><div class="lu-role">${u.role} · ${u.department}${u.probation?' · Probation':''}</div></div></button>`).join("");}
+function doLogin(id){currentUser=USERS[id];chatMessages=[];document.getElementById("login-screen").style.display="none";document.getElementById("app-shell").style.display="block";document.getElementById("chat-fab").classList.remove("hidden");document.getElementById("nav-name").textContent=currentUser.name;document.getElementById("nav-avatar").textContent=currentUser.initials;showPage("dashboard");}
+function doLogout(){currentUser=null;chatMessages=[];chatOpen=false;document.getElementById("app-shell").style.display="none";document.getElementById("login-screen").style.display="flex";document.getElementById("chat-fab").classList.add("hidden");document.getElementById("chat-window").classList.remove("open");}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function showPage(name){["dashboard","leave","profile"].forEach(p=>{document.getElementById("page-"+p).style.display=p===name?"block":"none"});document.querySelectorAll(".topnav-links button").forEach((b,i)=>{b.classList.toggle("active",["dashboard","leave","profile"][i]===name)});if(name==="dashboard")renderDashboard();else if(name==="leave")renderLeave();else renderProfile();}
+function leaveTable(rows){if(!rows.length)return'<p style="font-size:13.5px;color:var(--mute);padding:14px 0;">No leave records yet.</p>';return`<div class="table-card"><table><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr>${rows.map(r=>`<tr><td>${esc(r.type)}</td><td>${esc(r.from)}${r.from!==r.to?" → "+esc(r.to):""}</td><td>${r.days}</td><td><span class="status-pill s-${r.status.toLowerCase()}">${r.status}</span></td></tr>`).join("")}</table></div>`;}
+function renderDashboard(){const u=currentUser,f=computeFacts(u),p=u.leaveHistory.filter(l=>l.status==="Pending").length;document.getElementById("page-dashboard").innerHTML=`<h1 class="page-title">Welcome back, ${esc(u.name.split(" ")[0])}</h1><p class="page-sub">Here's your HR snapshot for today.</p><div class="stats"><div class="stat-card"><div class="stat-label">Annual leave remaining</div><div class="stat-value v-teal">${f.annualLeaveRemaining} days</div></div><div class="stat-card"><div class="stat-label">Sick leave remaining</div><div class="stat-value v-violet">${f.sickLeaveRemaining} days</div></div><div class="stat-card"><div class="stat-label">Pending requests</div><div class="stat-value v-amber">${p}</div></div></div><div class="section-title">Recent leave</div>${leaveTable(u.leaveHistory.slice(-3).reverse())}<div style="margin-top:20px;padding:18px 22px;background:var(--violet-soft);border-radius:14px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:11px;background:var(--violet);color:#fff;display:grid;place-items:center;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:18px;flex-shrink:0;">iv</div><div style="flex:1;"><strong>Need help?</strong> Click the <span style="color:var(--violet);font-weight:700;">iv</span> button in the bottom-right corner to ask AskIvy about any HR policy, check your eligibility, or even apply for leave through the chat.</div></div>`;}
+function renderLeave(){const u=currentUser,f=computeFacts(u);document.getElementById("page-leave").innerHTML=`<h1 class="page-title">Leave management</h1><p class="page-sub">View your history and apply for new leave.</p><div class="stats"><div class="stat-card"><div class="stat-label">Annual leave</div><div class="stat-value v-teal">${f.annualLeaveRemaining} / ${u.annualLeaveEntitlement}</div></div><div class="stat-card"><div class="stat-label">Sick leave</div><div class="stat-value v-violet">${f.sickLeaveRemaining} / 14</div></div><div class="stat-card"><div class="stat-label">Parental eligible</div><div class="stat-value" style="color:${f.eligibleForParental?'var(--teal)':'var(--red)'}">${f.eligibleForParental?"Yes":"No"}</div></div></div><div class="section-title">Apply for leave</div><div class="form-card"><div class="form-row"><div class="form-group"><label>Leave type</label><select id="leave-type"><option>Annual</option><option>Sick</option><option>Parental</option><option>Compassionate</option></select></div><div class="form-group"><label>From</label><input type="date" id="leave-from"/></div><div class="form-group"><label>To</label><input type="date" id="leave-to"/></div></div><div class="form-row"><div class="form-group"><label>Reason (optional)</label><textarea id="leave-reason" placeholder="e.g. Family holiday"></textarea></div></div><button class="btn-submit" onclick="submitLeave()">Submit request</button></div><div class="section-title">Leave history</div>${leaveTable(u.leaveHistory.slice().reverse())}<div style="margin-top:14px;padding:14px 18px;background:var(--violet-soft);border-radius:12px;font-size:13px;">You can also apply for leave by chatting with AskIvy — just say <em>"I want to take 2 days off."</em></div>`;}
+function submitLeave(){const type=document.getElementById("leave-type").value,from=document.getElementById("leave-from").value,to=document.getElementById("leave-to").value;if(!from||!to){showToast("Please select dates.");return;}if(new Date(to)<new Date(from)){showToast("End date must be after start date.");return;}const days=Math.round((new Date(to)-new Date(from))/86400000)+1;currentUser.leaveHistory.push({type,from,to,days,status:"Pending"});if(type==="Annual")currentUser.annualLeaveTaken+=days;showToast("Leave request submitted! ("+days+" day"+(days>1?"s":"")+")");renderLeave();}
+function renderProfile(){const u=currentUser,f=computeFacts(u);document.getElementById("page-profile").innerHTML=`<h1 class="page-title">My profile</h1><p class="page-sub">Your employment details as seen by AskIvy.</p><div class="profile-card"><div class="profile-avatar">${u.initials}</div><div class="profile-info"><div class="profile-name">${esc(u.name)} <span class="badge ${u.probation?'badge-amber':'badge-green'}">${u.probation?'Probation':'Confirmed'}</span></div><div class="profile-role">${esc(u.role)} · ${esc(u.department)}</div><div class="profile-details"><div class="pd-item"><div class="pd-label">Start date</div><div class="pd-value">${u.startDate}</div></div><div class="pd-item"><div class="pd-label">Tenure</div><div class="pd-value">${u.tenureYears<1?"< 1 year":u.tenureYears+" years"}</div></div><div class="pd-item"><div class="pd-label">Salary band</div><div class="pd-value">${u.salaryBand}</div></div><div class="pd-item"><div class="pd-label">Marital status</div><div class="pd-value">${u.maritalStatus}</div></div><div class="pd-item"><div class="pd-label">Notice period</div><div class="pd-value">${f.notice}</div></div><div class="pd-item"><div class="pd-label">Bonus eligible</div><div class="pd-value">${f.bonusEligible?"Yes":"No"}</div></div></div></div></div><div style="padding:14px 18px;background:var(--violet-soft);border-radius:12px;font-size:13px;">This is the profile data AskIvy uses. If anything looks wrong, contact HR.</div>`;}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHATBOT UI (improved)
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleChat(){chatOpen=!chatOpen;document.getElementById("chat-window").classList.toggle("open",chatOpen);if(chatOpen)renderChat();}
+const CHAT_SUGGESTIONS=["How many leave days do I have?","Am I eligible for parental leave?","I want to apply for 2 days annual leave","My cousin passed away, what can I take?"];
+function renderChat(){
+  const body=document.getElementById("chat-body");body.innerHTML="";
+  if(!chatMessages.length){
+    body.innerHTML=`<div class="chat-empty"><div class="chat-empty-mark">iv</div><div class="chat-empty-title">Hi ${esc(currentUser.name.split(" ")[0])}!</div><div class="chat-empty-body">I understand situations, not just keywords. Try telling me what's happening and I'll figure out the right policy.</div><div class="chat-chips">${CHAT_SUGGESTIONS.map(s=>`<button class="chat-chip" onclick="chatAskQ('${s.replace(/'/g,"\\'")}')">${s}</button>`).join("")}</div></div>`;return;
+  }
+  chatMessages.forEach(m=>{
+    const div=document.createElement("div");div.className="msg-anim";
+    if(m.role==="user"){div.innerHTML=`<div class="cb-user"><div class="cb-user-bubble">${esc(m.text)}</div></div>`;}
+    else if(m.role==="typing"){div.innerHTML=`<div class="cb-typing"><div class="cb-bot-mark">iv</div><div class="cb-typing-dots"><span></span><span></span><span></span></div></div>`;}
+    else{
+      let tag="";
+      if(m.isAction)tag=`<div class="cb-bot-tag action">Action</div>`;
+      else if(m.tag==="empathy")tag=`<div class="cb-bot-tag empathy">Sensitive</div>`;
+      else if(m.personal)tag=`<div class="cb-bot-tag personal">Personalised for ${esc(currentUser.name.split(" ")[0])}</div>`;
+      const src=m.source?`<div class="cb-source">§ ${esc(m.source)}</div>`:"";
+      const action=m.actionCard||"";
+      let related="";
+      if(m.followups&&m.followups.length){related=`<div class="cb-related"><div class="cb-related-label">Related questions</div>${m.followups.map(f=>`<button class="cb-followup" onclick="chatAskQ('${f.replace(/'/g,"\\'")}')">${f}</button>`).join("")}</div>`;}
+      div.innerHTML=`<div class="cb-bot"><div class="cb-bot-mark">iv</div><div class="cb-bot-bubble">${tag}<div class="cb-bot-text">${esc(m.text)}</div>${src}${action}${related}</div></div>`;
+    }
+    body.appendChild(div);
+  });
+  body.scrollTop=body.scrollHeight;
+}
+function chatAskQ(q){document.getElementById("chat-input").value=q;chatAsk();}
+function chatAsk(){
+  const input=document.getElementById("chat-input"),q=input.value.trim();if(!q)return;
+  chatMessages.push({role:"user",text:q});
+  chatMessages.push({role:"typing"});
+  input.value="";renderChat();
+  setTimeout(()=>{
+    chatMessages=chatMessages.filter(m=>m.role!=="typing");
+    const resp=generateResponse(q,currentUser);
+    const msg={role:"assistant",text:resp.text,source:resp.source,personal:resp.personal,tag:resp.tag||null,isAction:resp.isAction||false,actionCard:"",followups:resp.followups||[]};
+    if(resp.isAction){msg.actionCard=`<div class="cb-action-card"><strong>Leave request ready</strong><br>${resp.actionType} leave · ${resp.actionDays} day${resp.actionDays>1?"s":""}<br><button class="cb-action-btn" onclick="chatSubmitLeave('${resp.actionType}',${resp.actionDays})">Submit this request</button></div>`;}
+    chatMessages.push(msg);renderChat();
+  },900);
+}
+function chatSubmitLeave(type,days){const today=new Date(),from=new Date(today);from.setDate(from.getDate()+7);const to=new Date(from);to.setDate(to.getDate()+days-1);const fmt=d=>d.toISOString().split("T")[0];currentUser.leaveHistory.push({type,from:fmt(from),to:fmt(to),days,status:"Pending"});if(type==="Annual")currentUser.annualLeaveTaken+=days;chatMessages.push({role:"assistant",text:`Done! I've submitted your ${type.toLowerCase()} leave for ${days} day${days>1?"s":""} (${fmt(from)} to ${fmt(to)}). It's pending your manager's approval. Check the Leave page anytime.`,source:null,isAction:true,actionCard:"",personal:true,followups:[]});renderChat();showToast("Leave request submitted via AskIvy!");}
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
+document.getElementById("chat-input").addEventListener("keydown",e=>{if(e.key==="Enter")chatAsk();});
+buildLoginScreen();
+</script>
+</body>
+</html>

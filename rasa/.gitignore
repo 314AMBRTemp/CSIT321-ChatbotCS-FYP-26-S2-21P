@@ -1,0 +1,10 @@
+.env
+.venv/
+venv/
+models/
+.rasa/
+__pycache__/
+*.pyc
+events.db
+rasa.db
+*.log

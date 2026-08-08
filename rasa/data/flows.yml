@@ -1,0 +1,136 @@
+flows:
+
+  # ── 1. Leave balance ───────────────────────────────────────────────────────
+  check_leave_balance:
+    description: >
+      The employee wants to know how much leave they have left — annual leave
+      balance, sick leave balance, remaining days, or entitlement.
+    steps:
+      - action: action_get_leave_balance
+
+  # ── 2. Apply for leave ─────────────────────────────────────────────────────
+  apply_for_leave:
+    description: >
+      The employee wants to book, apply for, request, or submit a leave request
+      into the HRMS. Use this when they are asking to take time off, not when
+      they are only asking about policy rules.
+    steps:
+      - collect: leave_type
+        description: >
+          The kind of leave requested. Must be exactly one of:
+          Annual, Sick, Compassionate, Parental.
+        rejections:
+          # pypred (Rasa's predicate language) has no list/`in` syntax — a Python
+          # `not in [...]` here fails validation with an opaque parser error.
+          # This is the equivalent chained-comparison form it actually supports.
+          - if: "slots.leave_type != 'Annual' and slots.leave_type != 'Sick' and slots.leave_type != 'Compassionate' and slots.leave_type != 'Parental'"
+            utter: utter_invalid_leave_type
+
+      - collect: leave_days
+        description: The number of days of leave the employee wants to take.
+        rejections:
+          - if: "slots.leave_days < 1 or slots.leave_days > 30"
+            utter: utter_invalid_leave_days
+
+      - collect: confirm_submit
+        description: >
+          Whether the employee confirms they want the request submitted.
+          True if they agree, False if they decline or want to change something.
+        next:
+          - if: "slots.confirm_submit"
+            then:
+              - action: action_submit_leave
+                next: END
+          - else:
+              - action: utter_leave_cancelled
+                next: END
+
+  # ── 2b. Cancel a pending leave request ─────────────────────────────────────
+  cancel_leave:
+    description: >
+      The employee wants to cancel, withdraw, or retract a leave request they
+      already submitted, while it is still pending manager approval. Not for
+      an approved request, and not for starting a new leave application.
+    steps:
+      - action: action_find_pending_leave
+        next:
+          - if: "slots.pending_leave_count == 0"
+            then:
+              - action: utter_no_pending_leave
+                next: END
+          - if: "slots.pending_leave_count == 1"
+            then:
+              - collect: confirm_cancel
+                description: >
+                  Whether the employee confirms they want their one pending
+                  leave request cancelled. True if they agree, False if they
+                  want to keep it.
+                next:
+                  - if: "slots.confirm_cancel"
+                    then:
+                      - action: action_cancel_leave
+                        next: END
+                  - else:
+                      - action: utter_cancel_declined
+                        next: END
+          - else:
+              - collect: leave_to_cancel
+                description: >
+                  Which pending leave request the employee wants to cancel,
+                  described in their own words -- for example the leave type
+                  and/or the dates -- since they have more than one pending.
+              - action: action_cancel_leave
+                next: END
+
+  # ── 3. Compassionate leave / bereavement ───────────────────────────────────
+  compassionate_leave:
+    description: >
+      Someone close to the employee has died, or there is a serious family
+      emergency or funeral. The employee needs bereavement support and to know
+      what leave applies. This takes priority over generic leave questions.
+    steps:
+      - collect: relationship
+        description: >
+          The employee's relationship to the person who died — for example
+          mother, father, spouse, child, sibling, grandparent, cousin,
+          aunt, uncle.
+      - action: action_compassionate_leave
+
+  # ── 4. Parental leave eligibility ──────────────────────────────────────────
+  parental_eligibility:
+    description: >
+      The employee is asking whether they qualify for parental, maternity, or
+      paternity leave, or is expecting / has had a baby or adopted a child and
+      wants to know their entitlement.
+    steps:
+      - action: action_check_parental_eligibility
+
+  # ── 5. General policy lookup ───────────────────────────────────────────────
+  policy_question:
+    description: >
+      A general HR policy question that is not about the employee's own leave
+      balance or a leave application — for example notice period, resignation,
+      performance bonus, expense claims, working from home or hybrid rules, or
+      the code of conduct.
+    steps:
+      - collect: policy_topic
+        description: >
+          The HR topic being asked about, in a few words, taken from what the
+          employee said. For example "notice period", "bonus", "expenses",
+          "work from home", "code of conduct".
+      - action: action_policy_answer
+
+  # ── 6. Career path advice ──────────────────────────────────────────────────
+  career_path_advice:
+    description: >
+      The employee is asking about moving into a different role or department,
+      wants a career development or improvement plan, or is asking what skills,
+      certifications, or steps they would need to move from their current role
+      into a different one.
+    steps:
+      - collect: target_department
+        description: >
+          The department or role the employee wants to move into, in a few
+          words, taken from what the employee said. For example "Sales",
+          "Engineering", "Product", "Design", "Marketing".
+      - action: action_career_path_advice

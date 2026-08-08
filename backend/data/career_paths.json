@@ -1,0 +1,359 @@
+[
+  {
+    "id": "CAREER-01",
+    "fromDepartment": "Engineering",
+    "toDepartment": "Product",
+    "title": "Engineering → Product",
+    "summary": "Moving from a hands-on engineering role into product management means trading deep technical execution for cross-functional prioritisation and stakeholder communication.",
+    "recommendedCerts": [
+      "Certified Scrum Product Owner (CSPO)",
+      "Pragmatic Institute Product Management Certificate"
+    ],
+    "suggestedSteps": [
+      "Shadow the product team through a full sprint planning and roadmap review cycle",
+      "Own the spec for one feature end-to-end, including the business case",
+      "Build a track record of stakeholder-facing communication such as demos and roadmap updates"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-02",
+    "fromDepartment": "Product",
+    "toDepartment": "Engineering",
+    "title": "Product → Engineering",
+    "summary": "Moving from product into engineering means demonstrating hands-on technical depth beyond writing specs and coordinating cross-functionally.",
+    "recommendedCerts": [
+      "A language/framework certification matching the target engineering stack",
+      "AWS Certified Cloud Practitioner (or the equivalent for the target infrastructure)"
+    ],
+    "suggestedSteps": [
+      "Complete a supervised coding project with the engineering team end-to-end",
+      "Pair-program regularly with an engineering mentor for at least one quarter",
+      "Contribute fixes or small features to a live codebase under code review"
+    ],
+    "timeframe": "9-15 months"
+  },
+  {
+    "id": "CAREER-03",
+    "fromDepartment": "Operations",
+    "toDepartment": "Sales",
+    "title": "Operations → Sales",
+    "summary": "Moving from operations into sales means building comfort with client-facing conversations, negotiation, and revenue accountability, on top of the process discipline operations already builds.",
+    "recommendedCerts": [
+      "HubSpot Sales Software Certification",
+      "Certified Sales Professional (CSP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the sales team on at least 5 client calls",
+      "Take pilot ownership of a small account or renewal under a sales mentor",
+      "Complete internal sales enablement and product training"
+    ],
+    "timeframe": "3-6 months"
+  },
+  {
+    "id": "CAREER-04",
+    "fromDepartment": "Product",
+    "toDepartment": "Design",
+    "title": "Product → Design",
+    "summary": "Moving from product management into design means shifting from prioritisation and roadmap ownership toward hands-on craft: user research, interaction design, and visual execution.",
+    "recommendedCerts": [
+      "Google UX Design Professional Certificate",
+      "Interaction Design Foundation (IxDF) UX certification"
+    ],
+    "suggestedSteps": [
+      "Build a portfolio of 2-3 redesign case studies from real product problems",
+      "Pair with a designer on a live project for a full release cycle",
+      "Reach production-level comfort with the team's design tooling"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-05",
+    "fromDepartment": "Sales",
+    "toDepartment": "Marketing",
+    "title": "Sales → Marketing",
+    "summary": "Moving from sales into marketing means shifting from one-to-one persuasion toward one-to-many messaging, campaign strategy, and measurement.",
+    "recommendedCerts": [
+      "HubSpot Content Marketing Certification",
+      "Google Analytics Certification"
+    ],
+    "suggestedSteps": [
+      "Own the messaging for one campaign end-to-end with the marketing team",
+      "Build familiarity with the team's marketing analytics stack",
+      "Shadow the marketing team through a full campaign cycle, from brief to retro"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-06",
+    "fromDepartment": "Engineering",
+    "toDepartment": "Design",
+    "title": "Engineering → Design",
+    "summary": "Moving from engineering into design means shifting from implementing decisions to shaping them -- building user-research instincts and visual/interaction craft on top of the technical fluency engineering already provides.",
+    "recommendedCerts": [
+      "Google UX Design Professional Certificate",
+      "Interaction Design Foundation (IxDF) UX certification"
+    ],
+    "suggestedSteps": [
+      "Build a portfolio of 2-3 redesign case studies, drawing on features you've already built",
+      "Pair with a designer on a live project for a full release cycle",
+      "Reach production-level comfort with the team's design tooling"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-07",
+    "fromDepartment": "Engineering",
+    "toDepartment": "Sales",
+    "title": "Engineering → Sales",
+    "summary": "Moving from engineering into sales means building comfort with client-facing conversations and revenue accountability, while putting the technical credibility engineering built to use in solution-focused deals.",
+    "recommendedCerts": [
+      "HubSpot Sales Software Certification",
+      "Certified Sales Professional (CSP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the sales team on at least 5 client calls, focused on technical/solution discussions",
+      "Take pilot ownership of a small account or renewal under a sales mentor",
+      "Complete internal sales enablement and product training"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-08",
+    "fromDepartment": "Engineering",
+    "toDepartment": "Operations",
+    "title": "Engineering → Operations",
+    "summary": "Moving from engineering into operations means shifting from building systems to running and improving them -- process discipline, cross-team coordination, and execution at scale.",
+    "recommendedCerts": [
+      "Six Sigma Green Belt",
+      "Project Management Professional (PMP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the operations team through a full process cycle end-to-end",
+      "Own a process-improvement project from diagnosis to rollout",
+      "Cross-train on the operations team's core tooling and reporting"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-09",
+    "fromDepartment": "Product",
+    "toDepartment": "Sales",
+    "title": "Product → Sales",
+    "summary": "Moving from product into sales means shifting from writing the specs customers get to persuading customers directly -- turning deep product knowledge into deal-closing conversations.",
+    "recommendedCerts": [
+      "HubSpot Sales Software Certification",
+      "Certified Sales Professional (CSP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the sales team on at least 5 client calls",
+      "Take pilot ownership of a small account or renewal under a sales mentor",
+      "Complete internal sales enablement and product training"
+    ],
+    "timeframe": "3-6 months"
+  },
+  {
+    "id": "CAREER-10",
+    "fromDepartment": "Product",
+    "toDepartment": "Operations",
+    "title": "Product → Operations",
+    "summary": "Moving from product into operations means shifting from prioritisation and roadmap ownership toward process discipline and day-to-day execution at scale.",
+    "recommendedCerts": [
+      "Six Sigma Green Belt",
+      "Project Management Professional (PMP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the operations team through a full process cycle end-to-end",
+      "Own a process-improvement project from diagnosis to rollout",
+      "Cross-train on the operations team's core tooling and reporting"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-11",
+    "fromDepartment": "Design",
+    "toDepartment": "Engineering",
+    "title": "Design → Engineering",
+    "summary": "Moving from design into engineering means demonstrating hands-on technical depth beyond producing specs and mockups, building on the interaction/visual literacy design already provides.",
+    "recommendedCerts": [
+      "A language/framework certification matching the target engineering stack",
+      "AWS Certified Cloud Practitioner (or the equivalent for the target infrastructure)"
+    ],
+    "suggestedSteps": [
+      "Complete a supervised coding project with the engineering team end-to-end",
+      "Pair-program regularly with an engineering mentor for at least one quarter",
+      "Contribute fixes or small features to a live codebase under code review"
+    ],
+    "timeframe": "9-15 months"
+  },
+  {
+    "id": "CAREER-12",
+    "fromDepartment": "Design",
+    "toDepartment": "Product",
+    "title": "Design → Product",
+    "summary": "Moving from design into product management means trading hands-on craft for cross-functional prioritisation, building on the user-centred instincts design already builds.",
+    "recommendedCerts": [
+      "Certified Scrum Product Owner (CSPO)",
+      "Pragmatic Institute Product Management Certificate"
+    ],
+    "suggestedSteps": [
+      "Shadow the product team through a full sprint planning and roadmap review cycle",
+      "Own the spec for one feature end-to-end, including the business case",
+      "Build a track record of stakeholder-facing communication such as demos and roadmap updates"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-13",
+    "fromDepartment": "Design",
+    "toDepartment": "Sales",
+    "title": "Design → Sales",
+    "summary": "Moving from design into sales means building comfort with direct persuasion and revenue accountability, using the storytelling and presentation skills design already sharpens.",
+    "recommendedCerts": [
+      "HubSpot Sales Software Certification",
+      "Certified Sales Professional (CSP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the sales team on at least 5 client calls",
+      "Take pilot ownership of a small account or renewal under a sales mentor",
+      "Complete internal sales enablement and product training"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-14",
+    "fromDepartment": "Design",
+    "toDepartment": "Operations",
+    "title": "Design → Operations",
+    "summary": "Moving from design into operations means shifting from craft execution toward process discipline and day-to-day execution at scale.",
+    "recommendedCerts": [
+      "Six Sigma Green Belt",
+      "Project Management Professional (PMP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the operations team through a full process cycle end-to-end",
+      "Own a process-improvement project from diagnosis to rollout",
+      "Cross-train on the operations team's core tooling and reporting"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-15",
+    "fromDepartment": "Sales",
+    "toDepartment": "Engineering",
+    "title": "Sales → Engineering",
+    "summary": "Moving from sales into engineering means building hands-on technical depth from the ground up, on top of the product/customer intuition sales already provides.",
+    "recommendedCerts": [
+      "A language/framework certification matching the target engineering stack",
+      "AWS Certified Cloud Practitioner (or the equivalent for the target infrastructure)"
+    ],
+    "suggestedSteps": [
+      "Complete a supervised coding project with the engineering team end-to-end",
+      "Pair-program regularly with an engineering mentor for at least one quarter",
+      "Contribute fixes or small features to a live codebase under code review"
+    ],
+    "timeframe": "9-15 months"
+  },
+  {
+    "id": "CAREER-16",
+    "fromDepartment": "Sales",
+    "toDepartment": "Product",
+    "title": "Sales → Product",
+    "summary": "Moving from sales into product management means turning close customer contact into structured prioritisation and roadmap ownership.",
+    "recommendedCerts": [
+      "Certified Scrum Product Owner (CSPO)",
+      "Pragmatic Institute Product Management Certificate"
+    ],
+    "suggestedSteps": [
+      "Shadow the product team through a full sprint planning and roadmap review cycle",
+      "Own the spec for one feature end-to-end, including the business case",
+      "Build a track record of stakeholder-facing communication such as demos and roadmap updates"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-17",
+    "fromDepartment": "Sales",
+    "toDepartment": "Design",
+    "title": "Sales → Design",
+    "summary": "Moving from sales into design means building hands-on visual and interaction craft, backed by the customer empathy sales already develops.",
+    "recommendedCerts": [
+      "Google UX Design Professional Certificate",
+      "Interaction Design Foundation (IxDF) UX certification"
+    ],
+    "suggestedSteps": [
+      "Build a portfolio of 2-3 redesign case studies from real customer problems you've seen firsthand",
+      "Pair with a designer on a live project for a full release cycle",
+      "Reach production-level comfort with the team's design tooling"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-18",
+    "fromDepartment": "Sales",
+    "toDepartment": "Operations",
+    "title": "Sales → Operations",
+    "summary": "Moving from sales into operations means shifting from deal-by-deal persuasion toward process discipline and execution at scale.",
+    "recommendedCerts": [
+      "Six Sigma Green Belt",
+      "Project Management Professional (PMP)"
+    ],
+    "suggestedSteps": [
+      "Shadow the operations team through a full process cycle end-to-end",
+      "Own a process-improvement project from diagnosis to rollout",
+      "Cross-train on the operations team's core tooling and reporting"
+    ],
+    "timeframe": "4-8 months"
+  },
+  {
+    "id": "CAREER-19",
+    "fromDepartment": "Operations",
+    "toDepartment": "Engineering",
+    "title": "Operations → Engineering",
+    "summary": "Moving from operations into engineering means building hands-on technical depth, on top of the process rigor and systems-thinking operations already builds.",
+    "recommendedCerts": [
+      "A language/framework certification matching the target engineering stack",
+      "AWS Certified Cloud Practitioner (or the equivalent for the target infrastructure)"
+    ],
+    "suggestedSteps": [
+      "Complete a supervised coding project with the engineering team end-to-end",
+      "Pair-program regularly with an engineering mentor for at least one quarter",
+      "Contribute fixes or small features to a live codebase under code review"
+    ],
+    "timeframe": "9-15 months"
+  },
+  {
+    "id": "CAREER-20",
+    "fromDepartment": "Operations",
+    "toDepartment": "Product",
+    "title": "Operations → Product",
+    "summary": "Moving from operations into product management means turning process and systems fluency into structured prioritisation and roadmap ownership.",
+    "recommendedCerts": [
+      "Certified Scrum Product Owner (CSPO)",
+      "Pragmatic Institute Product Management Certificate"
+    ],
+    "suggestedSteps": [
+      "Shadow the product team through a full sprint planning and roadmap review cycle",
+      "Own the spec for one feature end-to-end, including the business case",
+      "Build a track record of stakeholder-facing communication such as demos and roadmap updates"
+    ],
+    "timeframe": "6-12 months"
+  },
+  {
+    "id": "CAREER-21",
+    "fromDepartment": "Operations",
+    "toDepartment": "Design",
+    "title": "Operations → Design",
+    "summary": "Moving from operations into design means building hands-on visual and interaction craft, backed by the process rigor operations already provides.",
+    "recommendedCerts": [
+      "Google UX Design Professional Certificate",
+      "Interaction Design Foundation (IxDF) UX certification"
+    ],
+    "suggestedSteps": [
+      "Build a portfolio of 2-3 redesign case studies from real process or workflow problems you've seen firsthand",
+      "Pair with a designer on a live project for a full release cycle",
+      "Reach production-level comfort with the team's design tooling"
+    ],
+    "timeframe": "6-12 months"
+  }
+]

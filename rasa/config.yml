@@ -1,0 +1,24 @@
+recipe: default.v1
+language: en
+assistant_id: askivy_hrms
+
+# ── CALM pipeline ────────────────────────────────────────────────────────────
+# One component does the understanding: CompactLLMCommandGenerator sends the
+# user message + the flow descriptions to Claude and gets back commands
+# (StartFlow / SetSlot / Clarify / ChitChat). FlowPolicy then executes those
+# commands deterministically against data/flows.yml.
+#
+# Claude = language understanding. Rasa = flow/slot structure. Not two NLU tracks.
+pipeline:
+  - name: CompactLLMCommandGenerator
+    llm:
+      model_group: claude_command_generator
+    # Flow retrieval is OFF on purpose. It exists to shortlist flows when an
+    # assistant has dozens of them; with 5 flows they all fit in the prompt.
+    # Leaving it on would pull in an embedding model (sentence-transformers +
+    # torch, ~2 GB) or require a second API key, for no benefit here.
+    flow_retrieval:
+      active: false
+
+policies:
+  - name: FlowPolicy

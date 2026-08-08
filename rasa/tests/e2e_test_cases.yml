@@ -1,0 +1,117 @@
+# Rasa Pro end-to-end tests — validation evidence for the FYP report.
+#
+# Run with the action server AND the Flask API up:
+#   cd rasa && rasa test e2e tests/e2e_test_cases.yml
+#
+# These assert on FLOW and SLOT behaviour rather than exact bot wording, because
+# the custom actions build their text from live HRMS data — a `bot:` string match
+# would fail the moment Sarah's leave balance changes.
+#
+# NOTE: the sender id doubles as the HRMS employee id (see actions.py), so these
+# cases exercise the seeded employees:
+#   sarah  — 7 years tenure, Principal Engineer, parental-eligible
+#   marcus — 0 years tenure, in probation, NOT parental-eligible
+
+test_cases:
+
+  - test_case: employee asks for their leave balance
+    steps:
+      - user: "How many leave days do I have left?"
+        assertions:
+          - flow_started: check_leave_balance
+          - action_executed: action_get_leave_balance
+
+  - test_case: bereavement is routed to compassionate leave, not annual leave
+    steps:
+      - user: "My mother passed away last night"
+        assertions:
+          - flow_started: compassionate_leave
+      - user: "She was my mother"
+        assertions:
+          - slot_was_set:
+              - name: relationship
+          - action_executed: action_compassionate_leave
+
+  - test_case: extended family bereavement still reaches compassionate leave
+    steps:
+      - user: "My cousin died, is there leave for this?"
+        assertions:
+          - flow_started: compassionate_leave
+      - user: "my cousin"
+        assertions:
+          - action_executed: action_compassionate_leave
+
+  - test_case: apply for annual leave end to end
+    steps:
+      - user: "I want to apply for leave"
+        assertions:
+          - flow_started: apply_for_leave
+      - user: "annual"
+        assertions:
+          - slot_was_set:
+              - name: leave_type
+                value: "Annual"
+      - user: "3 days"
+        assertions:
+          - slot_was_set:
+              - name: leave_days
+                value: 3.0
+      - user: "yes please submit it"
+        assertions:
+          - slot_was_set:
+              - name: confirm_submit
+                value: true
+          - action_executed: action_submit_leave
+
+  - test_case: apply for leave in one sentence fills every slot
+    steps:
+      - user: "Book me 2 days of sick leave"
+        assertions:
+          - flow_started: apply_for_leave
+          - slot_was_set:
+              - name: leave_type
+                value: "Sick"
+              - name: leave_days
+                value: 2.0
+
+  - test_case: declining confirmation files nothing
+    steps:
+      - user: "apply for 5 days annual leave"
+        assertions:
+          - flow_started: apply_for_leave
+      - user: "actually no, cancel that"
+        assertions:
+          - slot_was_set:
+              - name: confirm_submit
+                value: false
+          - bot_uttered:
+              utter_name: utter_leave_cancelled
+
+  - test_case: invalid leave type is rejected before submission
+    steps:
+      - user: "I want to apply for study leave"
+        assertions:
+          - flow_started: apply_for_leave
+          - bot_uttered:
+              utter_name: utter_invalid_leave_type
+
+  - test_case: parental eligibility for a long tenure employee
+    steps:
+      - user: "Am I eligible for parental leave?"
+        assertions:
+          - flow_started: parental_eligibility
+          - action_executed: action_check_parental_eligibility
+
+  - test_case: general policy question routes to the policy lookup
+    steps:
+      - user: "What is my notice period if I resign?"
+        assertions:
+          - flow_started: policy_question
+          - action_executed: action_policy_answer
+
+  - test_case: work from home policy question
+    steps:
+      - user: "How many days a week can I work from home?"
+        assertions:
+          - flow_started: policy_question
+          - action_executed: action_policy_answer

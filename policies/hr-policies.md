@@ -1,0 +1,84 @@
+# Lumen & Vale HR Policy Library
+
+This document represents the HR policy repository used by AskIvy in the FYP prototype. In the full implementation, these policies can be maintained in a document repository such as SharePoint, Confluence, Google Drive, Supabase Storage, or an internal HR knowledge base.
+
+## LEAVE-01 Annual Leave
+
+All permanent employees accrue annual leave based on length of service.
+
+- Under 2 years of service: 14 days per year
+- 2 to 5 years of service: 18 days per year
+- Over 5 years of service: 21 days per year
+- Employees with more than 2 years of service may carry over up to 5 unused days into the following year
+- Carried-over days expire on 31 March
+
+## LEAVE-02 Parental Leave
+
+Parental leave is available to employees who have completed at least 12 months of continuous service.
+
+- Birth mothers are entitled to 16 weeks of paid maternity leave
+- Partners are entitled to 4 weeks of paid paternity leave
+- Parental leave must commence within 12 months of the child's birth or adoption
+- Principal Engineers and above receive an additional 2 weeks of flexible return-to-work leave at reduced hours
+
+## LEAVE-03 Sick Leave
+
+Employees receive paid sick leave each calendar year.
+
+- Employees are entitled to 14 days of paid sick leave per calendar year
+- A medical certificate is required for any absence exceeding 2 consecutive days
+- Unused sick leave does not carry over
+
+## LEAVE-04 Compassionate Leave
+
+Compassionate leave supports employees during bereavement or serious family emergencies.
+
+- Employees may request compassionate leave for bereavement or serious family emergencies
+- Up to 5 paid working days may be granted for immediate family members
+- Immediate family includes spouse or partner, parent, child, sibling, grandparent, or parent-in-law
+- Up to 2 paid working days may be granted for extended family members such as aunt, uncle, cousin, niece, or nephew, subject to manager approval
+- Supporting documents may be requested by HR
+- Additional time may be taken using annual leave or unpaid leave with HR approval
+
+## WFH-01 Work From Home / Hybrid
+
+Lumen & Vale operates a hybrid working model.
+
+- Employees may work remotely up to 3 days per week with manager approval
+- Engineering staff returning from parental leave may request a temporary fully remote arrangement for up to 3 months
+- Employees in probation are expected on-site at least 4 days per week
+- All remote work must be logged in the HR portal
+
+## CONDUCT-01 Code of Conduct
+
+Employees must act with integrity, respect others, and protect confidential information.
+
+- All staff are expected to act with integrity and treat colleagues with respect
+- Harassment of any kind is grounds for disciplinary action
+- Confidential company and customer information must not be shared outside the organisation
+
+## RESIGN-01 Resignation & Notice
+
+Notice period depends on probation status and salary band.
+
+- Employees still in probation must give 1 week's notice
+- Confirmed employees in Bands 1 to 3 must give 4 weeks' notice
+- Confirmed employees in Bands 4 and above must give 8 weeks' notice
+- Accrued but untaken annual leave is paid out on departure
+
+## BONUS-01 Performance Bonus
+
+Annual performance bonuses are discretionary and subject to eligibility conditions.
+
+- Annual performance bonuses are discretionary and paid each March
+- Employees must be confirmed and still employed on the payment date to be eligible
+- Employees serving notice on the payment date are not eligible
+- Bonus amount is tied to performance rating and salary band
+
+## EXPENSE-01 Expense & Reimbursement
+
+Work-related claims must be submitted promptly with receipts and manager approval.
+
+- Work-related expenses must be submitted within 30 days with a valid receipt
+- Approvals follow the standard manager sign-off process
+- Reimbursements are paid in the next payroll cycle after approval

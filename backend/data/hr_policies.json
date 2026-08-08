@@ -1,0 +1,109 @@
+[
+  {
+    "id": "LEAVE-01",
+    "title": "Annual Leave",
+    "category": "Leave Management",
+    "summary": "Annual leave entitlement is based on length of service, with limited carry-over for eligible employees.",
+    "rules": [
+      "Employees with under 2 years of service receive 14 days of annual leave per year.",
+      "Employees with 2 to 5 years of service receive 18 days of annual leave per year.",
+      "Employees with over 5 years of service receive 21 days of annual leave per year.",
+      "Employees with more than 2 years of service may carry over up to 5 unused days into the following year.",
+      "Carried-over annual leave expires on 31 March."
+    ]
+  },
+  {
+    "id": "LEAVE-02",
+    "title": "Parental Leave",
+    "category": "Leave Management",
+    "summary": "Parental leave is available to employees who have completed at least 12 months of continuous service.",
+    "rules": [
+      "Birth mothers are entitled to 16 weeks of paid maternity leave.",
+      "Partners are entitled to 4 weeks of paid paternity leave.",
+      "Parental leave must commence within 12 months of the child's birth or adoption.",
+      "Principal Engineers and above receive an additional 2 weeks of flexible return-to-work leave that may be taken at reduced hours."
+    ]
+  },
+  {
+    "id": "LEAVE-03",
+    "title": "Sick Leave",
+    "category": "Leave Management",
+    "summary": "Employees receive paid sick leave each calendar year, subject to medical certificate requirements.",
+    "rules": [
+      "Employees are entitled to 14 days of paid sick leave per calendar year.",
+      "A medical certificate is required for any absence exceeding 2 consecutive days.",
+      "Unused sick leave does not carry over."
+    ]
+  },
+  {
+    "id": "LEAVE-04",
+    "title": "Compassionate Leave",
+    "category": "Leave Management",
+    "summary": "Compassionate leave supports employees during bereavement or serious family emergencies.",
+    "rules": [
+      "Employees may request compassionate leave for bereavement or serious family emergencies.",
+      "Up to 5 paid working days may be granted for immediate family members, including spouse or partner, parent, child, sibling, grandparent, or parent-in-law.",
+      "Up to 2 paid working days may be granted for extended family members, including aunt, uncle, cousin, niece, or nephew, subject to manager approval.",
+      "Supporting documents may be requested by HR.",
+      "Additional time may be taken using annual leave or unpaid leave with HR approval."
+    ]
+  },
+  {
+    "id": "WFH-01",
+    "title": "Work From Home / Hybrid",
+    "category": "Work Arrangement",
+    "summary": "Lumen & Vale operates a hybrid working model with manager approval and role-based conditions.",
+    "rules": [
+      "Employees may work remotely up to 3 days per week with manager approval.",
+      "Engineering staff returning from parental leave may request a temporary fully-remote arrangement for up to 3 months.",
+      "Employees in probation are expected on-site at least 4 days per week.",
+      "All remote work must be logged in the HR portal."
+    ]
+  },
+  {
+    "id": "CONDUCT-01",
+    "title": "Code of Conduct",
+    "category": "Employee Conduct",
+    "summary": "Employees must act with integrity, respect others, and protect confidential information.",
+    "rules": [
+      "All staff are expected to act with integrity and treat colleagues with respect.",
+      "Harassment of any kind is grounds for disciplinary action.",
+      "Confidential company and customer information must not be shared outside the organisation."
+    ]
+  },
+  {
+    "id": "RESIGN-01",
+    "title": "Resignation & Notice",
+    "category": "Employment Administration",
+    "summary": "Notice period depends on probation status and salary band.",
+    "rules": [
+      "Employees still in probation must give 1 week's notice.",
+      "Confirmed employees in Bands 1 to 3 must give 4 weeks' notice.",
+      "Confirmed employees in Bands 4 and above must give 8 weeks' notice.",
+      "Accrued but untaken annual leave is paid out on departure."
+    ]
+  },
+  {
+    "id": "BONUS-01",
+    "title": "Performance Bonus",
+    "category": "Compensation",
+    "summary": "Annual performance bonuses are discretionary and subject to eligibility conditions.",
+    "rules": [
+      "Annual performance bonuses are discretionary and paid each March.",
+      "Employees must be confirmed and still employed on the payment date to be eligible.",
+      "Employees serving notice on the payment date are not eligible.",
+      "Bonus amount is tied to performance rating and salary band."
+    ]
+  },
+  {
+    "id": "EXPENSE-01",
+    "title": "Expense & Reimbursement",
+    "category": "Claims and Reimbursement",
+    "summary": "Work-related claims must be submitted promptly with receipts and manager approval.",
+    "rules": [
+      "Work-related expenses must be submitted within 30 days with a valid receipt.",
+      "Approvals follow the standard manager sign-off process.",
+      "Reimbursements are paid in the next payroll cycle after approval."
+    ]
+  }
+]

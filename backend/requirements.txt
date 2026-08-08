@@ -1,0 +1,12 @@
+Flask==3.0.3
+Flask-Cors==4.0.1
+Flask-SQLAlchemy==3.1.1
+python-dotenv==1.0.1
+
+# Used by services/rasa_adapter.py to reach the Rasa REST channel.
+requests==2.32.3
+
+# Needed for the Render deploy: Postgres driver for DATABASE_URL, and the
+# production WSGI server (gunicorn does not run on Windows locally).
+psycopg2-binary==2.9.9
+gunicorn==23.0.0

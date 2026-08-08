@@ -1,0 +1,28 @@
+# Custom action server (rasa run actions) — where actions/actions.py is served.
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+
+# ── LLM configuration ────────────────────────────────────────────────────────
+# Rasa routes this through LiteLLM, so `provider: anthropic` + `model: <id>`
+# becomes an Anthropic Messages API call. ANTHROPIC_API_KEY must be set in the
+# terminal that runs `rasa train` / `rasa run`.
+#
+# MODEL CHOICE — read before changing:
+#   claude-3-7-sonnet-* was RETIRED on 2026-02-19 and now 404s. Do not use it.
+#
+#   claude-sonnet-4-5  <- current default here. Still accepts `temperature`,
+#                         which matters: command generation wants determinism,
+#                         and this is the newest Sonnet that allows temperature: 0.
+#   claude-sonnet-5    <- newer and stronger, BUT rejects non-default sampling
+#                         params with a 400. To use it you must DELETE the
+#                         `temperature` line below, not just swap the model id.
+#   claude-opus-4-5    <- if command accuracy matters more than cost/latency.
+#                         Also accepts temperature.
+model_groups:
+  - id: claude_command_generator
+    models:
+      - provider: anthropic
+        model: claude-sonnet-4-5
+        temperature: 0.0
+        max_tokens: 1024
+        timeout: 30

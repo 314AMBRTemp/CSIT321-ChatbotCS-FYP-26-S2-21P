@@ -1,0 +1,100 @@
+version: "3.1"
+
+# All slots are filled by the LLM command generator (`from_llm`), not by
+# regex/entity extraction. That is the CALM model: Claude decides what the user
+# meant and emits SetSlot commands; Rasa validates and stores them.
+slots:
+  leave_type:
+    type: text
+    mappings:
+      - type: from_llm
+
+  leave_days:
+    type: float
+    mappings:
+      - type: from_llm
+
+  confirm_submit:
+    type: bool
+    mappings:
+      - type: from_llm
+
+  relationship:
+    type: text
+    mappings:
+      - type: from_llm
+
+  policy_topic:
+    type: text
+    mappings:
+      - type: from_llm
+
+  target_department:
+    type: text
+    mappings:
+      - type: from_llm
+
+  pending_leave_count:
+    type: float
+    mappings:
+      - type: controlled
+
+  confirm_cancel:
+    type: bool
+    mappings:
+      - type: from_llm
+
+  leave_to_cancel:
+    type: text
+    mappings:
+      - type: from_llm
+
+responses:
+  utter_ask_leave_type:
+    - text: "What kind of leave is this -- annual, sick, compassionate, or parental?"
+
+  utter_ask_leave_days:
+    - text: "How many days do you need?"
+
+  utter_ask_confirm_submit:
+    - text: "Shall I submit this request to the HRMS for manager approval?"
+
+  utter_ask_relationship:
+    - text: "I'm sorry for your loss. So I apply the right part of the policy -- what was your relationship to them?"
+
+  utter_ask_policy_topic:
+    - text: "Which HR topic can I look up for you? For example notice period, bonus, expenses, working from home, or the code of conduct."
+
+  utter_ask_target_department:
+    - text: "Which department or role are you interested in moving into?"
+
+  utter_invalid_leave_type:
+    - text: "I can only file annual, sick, compassionate, or parental leave. Which of those fits?"
+
+  utter_invalid_leave_days:
+    - text: "That doesn't look right -- please give a number of days between 1 and 30."
+
+  utter_leave_cancelled:
+    - text: "No problem, I haven't submitted anything. Let me know if you'd like to change the details."
+
+  utter_ask_confirm_cancel:
+    - text: "Shall I go ahead and cancel that pending leave request?"
+
+  utter_ask_leave_to_cancel:
+    - text: "Which pending request would you like to cancel -- the type, or the date, is enough."
+
+  utter_no_pending_leave:
+    - text: "You don't have any pending leave requests right now, so there's nothing to cancel."
+
+  utter_cancel_declined:
+    - text: "No problem, I've kept your leave request as it is."
+
+actions:
+  - action_get_leave_balance
+  - action_submit_leave
+  - action_find_pending_leave
+  - action_cancel_leave
+  - action_compassionate_leave
+  - action_check_parental_eligibility
+  - action_policy_answer
+  - action_career_path_advice

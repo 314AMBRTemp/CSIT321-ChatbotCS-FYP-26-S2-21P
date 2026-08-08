@@ -1,0 +1,20 @@
+# Rasa Pro needs its OWN virtualenv — its pinned dependencies conflict with the
+# Flask backend's. Never install this into backend/venv.
+#
+# ⚠ PYTHON VERSION: rasa-pro requires Python >=3.10,<3.14 (verified against the
+#   package index). The interpreter currently on PATH is 3.14.4, which CANNOT
+#   install it — `pip install rasa-pro` fails with "no matching distribution".
+#   Create this venv with Python 3.12 or 3.13 explicitly:
+#       py -3.12 -m venv .venv
+#
+# rasa-pro is published on PyPI; no extra index URL is needed. A licence key
+# (RASA_LICENSE) must be set in the environment before `rasa train` or
+# `rasa run` will start. Free developer tier: rasa.com/rasa-pro-developer-edition/
+
+rasa-pro>=3.18,<3.19
+
+# Used by actions/actions.py to call the Flask HRMS API.
+requests>=2.32.0
+
+# Loads rasa/.env so ANTHROPIC_API_KEY / ASKIVY_API_URL are picked up.
+python-dotenv>=1.0.1
