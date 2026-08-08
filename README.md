@@ -50,4 +50,4 @@ Health check: `http://localhost:5000/api/health`
 Rasa wiring check: `http://localhost:5000/api/askivy/rasa/health`
 
 Full setup (venv creation, API keys, retraining, deployment, troubleshooting) is
-documented in [`CLAUDE.md`](CLAUDE.md).
+documented in [`quickstart.md`](quickstart.md).
