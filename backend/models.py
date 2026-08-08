@@ -1,7 +1,12 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+
+def utcnow():
+    # Replaces the deprecated datetime.utcnow(); stays naive to match existing DateTime columns.
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class Employee(db.Model):
     __tablename__ = "employees"
@@ -52,7 +57,7 @@ class LeaveRequest(db.Model):
     reason = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="Pending")
     submitted_via = db.Column(db.String(30), nullable=False, default="Portal")
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     employee = db.relationship("Employee", back_populates="leave_requests")
 
@@ -77,7 +82,7 @@ class ChatMessage(db.Model):
     question = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text, nullable=False)
     policy_used = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     employee = db.relationship("Employee", back_populates="chat_messages")
 

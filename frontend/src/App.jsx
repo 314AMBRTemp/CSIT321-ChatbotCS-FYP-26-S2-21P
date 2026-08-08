@@ -8,13 +8,13 @@ function formatDateRange(row) {
   return row.from === row.to ? row.from : `${row.from} → ${row.to}`;
 }
 
-function LeaveTable({ rows }) {
+function LeaveTable({ rows, onCancel }) {
   if (!rows?.length) return <p className="empty-text">No leave records yet.</p>;
   return (
     <div className="table-card">
       <table>
         <thead>
-          <tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th>Via</th></tr>
+          <tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th>Via</th>{onCancel ? <th></th> : null}</tr>
         </thead>
         <tbody>
           {rows.map((row) => (
@@ -24,6 +24,13 @@ function LeaveTable({ rows }) {
               <td>{row.days}</td>
               <td><span className={`status-pill s-${row.status.toLowerCase()}`}>{row.status}</span></td>
               <td>{row.submittedVia || "Portal"}</td>
+              {onCancel ? (
+                <td>
+                  {row.status === "Pending" ? (
+                    <button className="btn-cancel-leave" onClick={() => onCancel(row.id)}>Cancel</button>
+                  ) : null}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -55,7 +62,7 @@ function LoginScreen({ users, onLogin }) {
   );
 }
 
-function DashboardPage({ data }) {
+function DashboardPage({ data, onCancel }) {
   const employee = data.employee;
   const facts = data.facts;
   const recent = data.leaveHistory.slice(0, 3);
@@ -70,7 +77,7 @@ function DashboardPage({ data }) {
         <div className="stat-card"><div className="stat-label">Pending requests</div><div className="stat-value v-amber">{data.pendingCount}</div></div>
       </div>
       <div className="section-title">Recent leave</div>
-      <LeaveTable rows={recent} />
+      <LeaveTable rows={recent} onCancel={onCancel} />
       <div className="info-banner">
         <div className="info-mark">iv</div>
         <div><strong>Need help?</strong> Click the AskIvy button in the bottom-right corner to ask HR policy questions, check eligibility, or submit a leave request through the chatbot.</div>
@@ -79,7 +86,7 @@ function DashboardPage({ data }) {
   );
 }
 
-function LeavePage({ data, employeeId, refresh, showToast }) {
+function LeavePage({ data, employeeId, refresh, showToast, onCancel }) {
   const [form, setForm] = useState({ type: "Annual", from: "", to: "", reason: "" });
 
   async function submit(e) {
@@ -127,7 +134,7 @@ function LeavePage({ data, employeeId, refresh, showToast }) {
       </form>
 
       <div className="section-title">Leave history</div>
-      <LeaveTable rows={data.leaveHistory} />
+      <LeaveTable rows={data.leaveHistory} onCancel={onCancel} />
       <div className="hint-box">💡 You can also apply for leave by chatting with AskIvy — try: <em>“My cousin passed away, is there leave for this?”</em></div>
     </main>
   );
@@ -240,6 +247,17 @@ function App() {
     }
   }
 
+  async function cancelLeave(leaveId) {
+    if (!window.confirm("Cancel this pending leave request?")) return;
+    try {
+      await api.cancelLeave(employeeId, leaveId);
+      showToast("Leave request cancelled.");
+      refreshAll();
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
   function logout() {
     setCurrentUser(null);
     setActivePage("dashboard");
@@ -273,8 +291,8 @@ function App() {
       </nav>
 
       {loading && !activeData ? <main className="page"><p>Loading HRMS data...</p></main> : null}
-      {activePage === "dashboard" && dashboardData ? <DashboardPage data={dashboardData} /> : null}
-      {activePage === "leave" && leaveData ? <LeavePage data={leaveData} employeeId={employeeId} refresh={refreshAll} showToast={showToast} /> : null}
+      {activePage === "dashboard" && dashboardData ? <DashboardPage data={dashboardData} onCancel={cancelLeave} /> : null}
+      {activePage === "leave" && leaveData ? <LeavePage data={leaveData} employeeId={employeeId} refresh={refreshAll} showToast={showToast} onCancel={cancelLeave} /> : null}
       {activePage === "profile" && profileData ? <ProfilePage data={profileData} /> : null}
       {activePage === "policies" ? <PoliciesPage policies={policies} /> : null}
 

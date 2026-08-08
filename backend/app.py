@@ -25,7 +25,7 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": os.getenv("FRONTEND_ORIGIN", "*")}})
+    CORS(app, resources={r"/api/*": {"origins": os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")}})
 
     with app.app_context():
         db.create_all()
@@ -177,7 +177,12 @@ def create_app():
         payload = request.get_json(silent=True) or {}
         employee_id = payload.get("employeeId")
         leave_type = str(payload.get("type", "Annual")).strip().capitalize()
-        days = int(payload.get("days", 1))
+        try:
+            days = int(payload.get("days", 1))
+        except (TypeError, ValueError):
+            return jsonify({"error": "days must be a whole number."}), 400
+        if days < 1:
+            return jsonify({"error": "days must be at least 1."}), 400
 
         employee = Employee.query.get_or_404(employee_id)
         start_date, end_date = default_leave_dates(days)

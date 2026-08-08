@@ -33,6 +33,9 @@ export const api = {
     method: "POST",
     body: JSON.stringify(payload),
   }),
+  cancelLeave: (employeeId, leaveId) => request(`/api/employees/${employeeId}/leave/${leaveId}/cancel`, {
+    method: "POST",
+  }),
   askIvy: (employeeId, message) => request(ASKIVY_CHAT_PATH, {
     method: "POST",
     body: JSON.stringify({ employeeId, message }),
