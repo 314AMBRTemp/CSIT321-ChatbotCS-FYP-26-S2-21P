@@ -1,11 +1,13 @@
+import json
 import os
 from datetime import date, datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-from models import db, Employee, LeaveRequest, ChatMessage
-from services.policy_repository import load_policies, search_policies
+from models import db, Employee, LeaveRequest, ChatMessage, Policy
+from services.policies import active_source, load_policies, search_policies
+from services.policy_repository import load_policies as load_policies_from_file
 from services.career_repository import find_career_path, list_target_departments_from
 from services.askivy_engine import answer_question, employee_facts, default_leave_dates
 from services.rasa_adapter import rasa_bp
@@ -32,6 +34,11 @@ def create_app():
         ensure_columns()        # raw SQL only -- must precede any ORM query
         seed_demo_data()
         ensure_admin_accounts()  # ORM -- must follow seeding
+        seed_policies()          # keeps the policies table in step with hr_policies.json
+        # Which source actually won, printed at boot. active_source() reports what was asked
+        # for; this reports what is being served, so an empty-table fallback is visible in
+        # the Render logs instead of being something you infer from odd answers later.
+        print(f"[askivy] policy source requested={active_source()} serving={len(load_policies())} policies")
 
     @app.get("/api/health")
     def health():
@@ -326,6 +333,14 @@ def ensure_columns():
         ))
         db.session.commit()
 
+    if "policies" in inspector.get_table_names():
+        policy_columns = {c["name"] for c in inspector.get_columns("policies")}
+        if "sort_order" not in policy_columns:
+            db.session.execute(db.text(
+                "ALTER TABLE policies ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"
+            ))
+            db.session.commit()
+
 
 def ensure_admin_accounts():
     """Make sure the support account exists and ADMIN_EMPLOYEE_IDS is applied.
@@ -341,6 +356,44 @@ def ensure_admin_accounts():
         should_be_admin = employee.id in ADMIN_EMPLOYEE_IDS
         if employee.is_admin != should_be_admin:
             employee.is_admin = should_be_admin
+    db.session.commit()
+
+
+def seed_policies():
+    """Re-copy hr_policies.json into the policies table on every boot.
+
+    Part of the mirror step: the database holds a faithful copy so the two repositories can
+    be compared, while the JSON file stays the live source. Resyncing rather than seeding
+    once is deliberate *while it is only a mirror* -- the file is still the thing being
+    edited, so the copy has to track it, and a stale copy would make tests/policy_parity.py
+    fail for a reason that has nothing to do with the migration.
+
+    AT CUTOVER this must become seed-once (`if Policy.query.first(): return`). The moment the
+    database is the live source and policies are editable in the admin UI, this function
+    would otherwise wipe every edit on the next restart.
+
+    sort_order preserves the file's ordering. score_policies() sorts by score and Python's
+    sort is stable, so equal-scoring policies fall back to input order -- meaning the row
+    order here decides what a low-signal question gets told.
+    """
+    existing = {policy.id: policy for policy in Policy.query.all()}
+
+    # Explicitly the FILE loader, never the switched one. Under POLICY_SOURCE=database the
+    # façade returns the policies table, and this would seed the table from itself -- a
+    # silent no-op that looks like a working migration until the file changes and nothing
+    # picks it up.
+    for index, entry in enumerate(load_policies_from_file()):
+        policy = existing.pop(entry["id"], None) or Policy(id=entry["id"])
+        policy.title = entry["title"]
+        policy.category = entry["category"]
+        policy.summary = entry["summary"]
+        policy.rules = json.dumps(entry.get("rules", []))
+        policy.sort_order = index
+        db.session.add(policy)
+
+    for stale in existing.values():   # dropped from the file since the last boot
+        db.session.delete(stale)
+
     db.session.commit()
 
 

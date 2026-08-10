@@ -357,6 +357,8 @@ is built from live HRMS data.
 - **Backend service:** root `backend`, build `pip install -r requirements.txt`,
   start `gunicorn app:app`, env `DATABASE_URL` (internal Postgres URL — the code
   rewrites `postgres://` → `postgresql://`) and `FRONTEND_ORIGIN`.
+  No `POLICY_SOURCE` needed — it defaults to `database`, and the table is seeded from
+  `hr_policies.json` at boot. Set `POLICY_SOURCE=json` only to roll back (see below).
 - **Static site:** root `frontend`, build `npm install && npm run build`,
   publish `dist`, env `VITE_API_URL`.
 - Free Postgres expires ~30 days after creation (14-day grace) — create it near the
@@ -383,7 +385,8 @@ is built from live HRMS data.
 | Bot text shows garbled characters or literal `u2022`-style text | Non-ASCII punctuation (em dash, bullet, middle dot) in `actions.py` or `domain.yml`, corrupted by this machine's `cp1252` console. Use ASCII (`--`, `-`, `|`) and set `PYTHONUTF8=1` before launching Rasa. |
 | Edited `domain.yml` or `flows.yml` but nothing changed | `rasa run` loads the domain baked into the trained model, not live from disk. Re-run `rasa train` first. |
 | Edited `actions.py` but the bot's replies are unchanged | `rasa run actions` loads `actions.py` once at boot and has **no auto-reload**. Restart the action server. Watch the asymmetry: Flask's debug reloader *does* pick up `app.py` / `askivy_engine.py` on save, so it is easy to assume Rasa does the same. Symptom to recognise: the REST API returns your new values but the chatbot still gives the old answer. |
-| Edited `hr_policies.json` / `career_paths.json` but answers are stale | `load_policies()` / `load_career_paths()` are `@lru_cache(maxsize=1)`, so the file is read once per process. Restart Flask. |
+| Edited `hr_policies.json` / `career_paths.json` but answers are stale | Restart Flask. `load_career_paths()` is `@lru_cache(maxsize=1)`, so the file is read once per process; policies now come from the database, and `seed_policies()` re-syncs the table from the file **at boot only**. |
+| Policy answers look wrong and you suspect the database | Set `POLICY_SOURCE=json` and restart — that reverts retrieval to reading `hr_policies.json` directly, with no redeploy or code change. The boot log line `[askivy] policy source requested=… serving=N policies` says which source is live. Confirm the two agree with `backend\.venv\Scripts\python.exe tests\policy_parity.py`. |
 | Config rejected on train | Installed Rasa differs from the assumed 3.18 layout. Run `rasa init --template calm` in a scratch dir and reconcile `config.yml` / `endpoints.yml` / `domain.yml`. `flows.yml` and `actions.py` are the portable parts. |
 
 ---

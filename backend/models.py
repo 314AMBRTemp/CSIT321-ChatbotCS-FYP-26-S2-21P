@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, date, timezone
 from flask_sqlalchemy import SQLAlchemy
 
@@ -78,6 +79,47 @@ class LeaveRequest(db.Model):
             "submittedVia": self.submitted_via,
             "createdAt": self.created_at.isoformat(),
         }
+
+class Policy(db.Model):
+    """Database-backed HR policies.
+
+    Mirrors backend/data/hr_policies.json during the migration -- seeded from it, validated
+    against it, and only later made the live source. Nothing reads this yet; see
+    services/policy_repository_db.py.
+
+    `rules` is a JSON array stored as text rather than a native array or JSONB column: the
+    same DDL then works on both SQLite locally and Postgres on Render, with no dialect
+    branching for the sake of a list of strings.
+    """
+
+    __tablename__ = "policies"
+
+    id = db.Column(db.String(32), primary_key=True)          # e.g. "LEAVE-01"
+    title = db.Column(db.String(160), nullable=False)
+    category = db.Column(db.String(80), nullable=False)
+    summary = db.Column(db.Text, nullable=False)
+    rules = db.Column(db.Text, nullable=False, default="[]")
+    # Position in the original hr_policies.json. Not cosmetic: score_policies() sorts by
+    # score and Python's sort is stable, so equal-scoring policies fall back to input order.
+    # Ordering by id instead would silently change which policies a low-signal query returns
+    # -- caught by tests/policy_parity.py, which is the whole reason it exists.
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        """Shaped exactly like an entry in hr_policies.json, so callers can't tell them apart."""
+        try:
+            rules = json.loads(self.rules)
+        except (TypeError, ValueError):
+            rules = []
+        return {
+            "id": self.id,
+            "title": self.title,
+            "category": self.category,
+            "summary": self.summary,
+            "rules": rules,
+        }
+
 
 class ChatMessage(db.Model):
     __tablename__ = "chat_messages"

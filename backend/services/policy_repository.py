@@ -1,6 +1,15 @@
+"""Policy retrieval, backed by the JSON file. The original and still the live source.
+
+The scoring algorithm now lives in policy_search.py so the database-backed repository can
+share it verbatim -- see policy_repository_db.py. Behaviour here is unchanged; verified
+against a snapshot of the previous implementation across 18 queries.
+"""
+
 import json
 from functools import lru_cache
 from pathlib import Path
+
+from services.policy_search import score_policies
 
 POLICY_PATH = Path(__file__).resolve().parent.parent / "data" / "hr_policies.json"
 
@@ -17,57 +26,4 @@ def get_policy_by_title(title):
 
 def search_policies(question):
     """Simple retrieval for local FYP demo. Can be replaced by vector search/RAG later."""
-    q = question.lower()
-    scored = []
-    for policy in load_policies():
-        haystack = " ".join([
-            policy.get("id", ""),
-            policy.get("title", ""),
-            policy.get("category", ""),
-            policy.get("summary", ""),
-            " ".join(policy.get("rules", [])),
-        ]).lower()
-
-        score = 0
-        for word in [w for w in q.replace("/", " ").replace("-", " ").split() if len(w) > 3]:
-            if word in haystack:
-                score += 1
-
-        if any(token in q for token in ["passed away", "died", "death", "bereavement", "funeral", "wake", "cousin", "aunt", "uncle"]):
-            if policy["id"] == "LEAVE-04":
-                score += 10
-        if any(token in q for token in ["parental", "maternity", "paternity", "baby", "birth", "adoption"]):
-            if policy["id"] == "LEAVE-02":
-                score += 8
-        if any(token in q for token in ["sick", "medical", "doctor", "mc", "clinic", "ill"]):
-            if policy["id"] == "LEAVE-03":
-                score += 8
-        if any(token in q for token in ["annual", "holiday", "vacation", "balance", "carry"]):
-            if policy["id"] == "LEAVE-01":
-                score += 7
-        if any(token in q for token in ["remote", "wfh", "hybrid", "work from home", "on-site", "onsite"]):
-            if policy["id"] == "WFH-01":
-                score += 8
-        if any(token in q for token in ["notice", "resign", "quit", "departure"]):
-            if policy["id"] == "RESIGN-01":
-                score += 8
-        # Kept narrow on purpose: bare "move"/"department" also appear in career and
-        # leave questions, so only explicit transfer phrasing boosts this one.
-        if any(token in q for token in ["transfer", "internal move", "change department", "switch department", "another department", "different department"]):
-            if policy["id"] == "TRANSFER-01":
-                score += 8
-        if "bonus" in q:
-            if policy["id"] == "BONUS-01":
-                score += 8
-        if any(token in q for token in ["expense", "claim", "receipt", "reimburse"]):
-            if policy["id"] == "EXPENSE-01":
-                score += 8
-        if any(token in q for token in ["conduct", "harassment", "confidential", "respect"]):
-            if policy["id"] == "CONDUCT-01":
-                score += 8
-
-        scored.append((score, policy))
-
-    scored.sort(key=lambda item: item[0], reverse=True)
-    hits = [policy for score, policy in scored if score > 0]
-    return hits[:3] if hits else [policy for _, policy in scored[:2]]
+    return score_policies(load_policies(), question)

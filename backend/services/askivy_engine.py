@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import date, timedelta
-from services.policy_repository import search_policies
+from services.policies import search_policies
 
 IMMEDIATE_FAMILY = {
     "spouse", "husband", "wife", "partner", "parent", "father", "mother", "mum", "mom", "dad",
