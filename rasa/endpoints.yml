@@ -24,5 +24,41 @@ model_groups:
       - provider: anthropic
         model: claude-sonnet-4-5
         temperature: 0.0
-        max_tokens: 1024
+        # Commands are short (a StartFlow plus a couple of SetSlots). 1024 was pure
+        # headroom; generation is token-by-token, so a lower ceiling caps worst-case
+        # latency without truncating anything real.
+        max_tokens: 256
         timeout: 30
+
+  # Separate group ON PURPOSE. Command generation must stay at temperature 0 for
+  # deterministic slot filling; conversational replies want some warmth. One shared
+  # group would force a bad compromise between the two.
+  - id: claude_rephraser
+    models:
+      # Haiku on purpose: after the hot-path responses were opted out of rephrasing
+      # (domain.yml), this group only rewords chitchat -- a trivial task where Sonnet
+      # was costing ~1.6s per turn for no benefit.
+      - provider: anthropic
+        model: claude-haiku-4-5-20251001
+        temperature: 0.7
+        max_tokens: 128
+        timeout: 20
+
+# ── NLG rephrasing ───────────────────────────────────────────────────────────
+# Without this, CALM's default patterns fall back to their shipped template text --
+# and utter_free_chitchat_response ships as the literal string "placeholder", so any
+# off-topic message got "placeholder" as the answer. This is what the
+# "NLG endpoint is not configured" warning on every `rasa train` was pointing at.
+#
+# Rephrasing is OPT-IN per response (metadata: rephrase: true). Only the default
+# patterns carry that flag, so our own responses and every custom-action reply stay
+# deterministic and keep citing real HRMS data.
+nlg:
+  type: rephrase
+  llm:
+    model_group: claude_rephraser
+  # Rasa's built-in rephrase prompt ends with a "Rephrased AI Response:" label, and
+  # the model was echoing that scaffolding into the chat -- users saw "Here's a
+  # rephrased version using simple English: **Rephrased AI Response:** ...".
+  # This template forbids any preamble or label.
+  prompt_template: prompts/rephrase.jinja2

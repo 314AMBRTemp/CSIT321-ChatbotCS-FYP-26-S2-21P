@@ -1,0 +1,8 @@
+test_cases:
+- test_case: off-topic messages get a chitchat reply, not a flow
+  steps:
+  - user: "Do you follow the football at all?"
+    assertions:
+    - flow_started: pattern_chitchat
+    - bot_uttered:
+        utter_name: utter_free_chitchat_response

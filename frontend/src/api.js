@@ -29,6 +29,12 @@ export const api = {
   leave: (employeeId) => request(`/api/employees/${employeeId}/leave`),
   profile: (employeeId) => request(`/api/employees/${employeeId}`),
   policies: () => request("/api/policies"),
+  chatHistory: (employeeId) => request(`/api/employees/${employeeId}/chat`),
+  adminChats: (requesterId, { employeeId = "", limit = 200 } = {}) => {
+    const params = new URLSearchParams({ requesterId, limit: String(limit) });
+    if (employeeId) params.set("employeeId", employeeId);
+    return request(`/api/admin/chats?${params.toString()}`);
+  },
   submitLeave: (employeeId, payload) => request(`/api/employees/${employeeId}/leave`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -36,9 +42,13 @@ export const api = {
   cancelLeave: (employeeId, leaveId) => request(`/api/employees/${employeeId}/leave/${leaveId}/cancel`, {
     method: "POST",
   }),
-  askIvy: (employeeId, message) => request(ASKIVY_CHAT_PATH, {
+  // `displayText` is what the user actually saw themselves send. For a clicked button that
+  // is the button's title, while `message` carries the /SetSlots(...) payload the bot needs.
+  // Without it the conversation log records the payload, which is unreadable in the support
+  // view.
+  askIvy: (employeeId, message, displayText) => request(ASKIVY_CHAT_PATH, {
     method: "POST",
-    body: JSON.stringify({ employeeId, message }),
+    body: JSON.stringify({ employeeId, message, displayText }),
   }),
   askIvyEngine: () => ASKIVY_ENGINE,
   askIvyRasaHealth: () => request("/api/askivy/rasa/health"),

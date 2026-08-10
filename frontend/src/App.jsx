@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import ChatWidget from "./components/ChatWidget.jsx";
 
-const pages = ["dashboard", "leave", "profile", "policies"];
+const BASE_PAGES = ["dashboard", "leave", "history", "profile", "policies"];
+
+const PAGE_LABELS = {
+  dashboard: "Dashboard",
+  leave: "Leave",
+  history: "My conversations",
+  profile: "My profile",
+  policies: "Policies",
+  admin: "Support",
+};
 
 function formatDateRange(row) {
   return row.from === row.to ? row.from : `${row.from} → ${row.to}`;
@@ -40,23 +49,47 @@ function LeaveTable({ rows, onCancel }) {
 }
 
 function LoginScreen({ users, onLogin }) {
+  // Grouped by department rather than one flat list of 15. The roster is deliberately this
+  // size -- the career-path matrix needs all five departments populated -- so the fix is
+  // structure, not fewer people. Human Resources sorts first: it's the support account.
+  const departments = useMemo(() => {
+    const groups = new Map();
+    for (const user of users) {
+      if (!groups.has(user.department)) groups.set(user.department, []);
+      groups.get(user.department).push(user);
+    }
+    return [...groups.entries()].sort(([a], [b]) => {
+      if (a === "Human Resources") return -1;
+      if (b === "Human Resources") return 1;
+      return a.localeCompare(b);
+    });
+  }, [users]);
+
   return (
     <div className="login-screen">
       <div className="login-box">
         <div className="login-mark">iv</div>
         <h1>Lumen & Vale HRMS</h1>
         <p>Sign in to access the HR portal and AskIvy, your HR policy assistant.</p>
-        <div className="login-users">
-          {users.map((user) => (
-            <button className="login-user" key={user.id} onClick={() => onLogin(user)}>
-              <div className="lu-av">{user.initials}</div>
-              <div>
-                <div className="lu-name">{user.name}</div>
-                <div className="lu-role">{user.role} · {user.department}{user.probation ? " · Probation" : ""}</div>
-              </div>
-            </button>
-          ))}
-        </div>
+        {departments.map(([department, members]) => (
+          <div className="login-dept" key={department}>
+            <div className="login-dept-name">{department}</div>
+            <div className="login-users">
+              {members.map((user) => (
+                <button className="login-user" key={user.id} onClick={() => onLogin(user)}>
+                  <div className="lu-av">{user.initials}</div>
+                  <div>
+                    <div className="lu-name">
+                      {user.name}
+                      {user.isAdmin ? <span className="lu-badge">Support</span> : null}
+                    </div>
+                    <div className="lu-role">{user.role}{user.probation ? " · Probation" : ""}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -140,6 +173,83 @@ function LeavePage({ data, employeeId, refresh, showToast, onCancel }) {
   );
 }
 
+function formatTimestamp(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+}
+
+// Shared by the employee's own history and the support view. `showWho` adds the employee
+// column, which only makes sense when the list spans more than one person.
+function TranscriptList({ messages, showWho = false, emptyText }) {
+  if (!messages?.length) return <p className="empty-text">{emptyText}</p>;
+  return (
+    <div className="transcript">
+      {messages.map((m) => (
+        <article className="transcript-item" key={m.id}>
+          <div className="transcript-meta">
+            {showWho ? <span className="transcript-who">{m.employeeName}</span> : null}
+            <span className="transcript-time">{formatTimestamp(m.createdAt)}</span>
+            {m.policyUsed ? <span className="transcript-source">§ {m.policyUsed}</span> : null}
+          </div>
+          <div className="transcript-q">{m.question}</div>
+          <div className="transcript-a">{m.response}</div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function HistoryPage({ messages }) {
+  return (
+    <main className="page">
+      <h1 className="page-title">My conversations</h1>
+      <p className="page-sub">Everything you've asked AskIvy, newest first.</p>
+      <TranscriptList
+        messages={messages}
+        emptyText="You haven't asked AskIvy anything yet."
+      />
+    </main>
+  );
+}
+
+function AdminPage({ data, users, filter, onFilterChange }) {
+  return (
+    <main className="page">
+      <h1 className="page-title">Support — conversation log</h1>
+      <p className="page-sub">
+        Every AskIvy conversation across the organisation. Use this to spot questions the
+        assistant handled badly or couldn't answer.
+      </p>
+
+      <div className="stats">
+        <div className="stat-card"><div className="stat-label">Total messages</div><div className="stat-value v-violet">{data?.total ?? 0}</div></div>
+        <div className="stat-card"><div className="stat-label">Showing</div><div className="stat-value v-teal">{data?.returned ?? 0}</div></div>
+        <div className="stat-card"><div className="stat-label">Employees</div><div className="stat-value v-amber">{users.length}</div></div>
+      </div>
+
+      <div className="form-card">
+        <div className="form-group">
+          <label>Filter by employee</label>
+          <select value={filter} onChange={(e) => onFilterChange(e.target.value)}>
+            <option value="">All employees</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>{u.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="section-title">Transcript</div>
+      <TranscriptList
+        messages={data?.messages}
+        showWho
+        emptyText="No conversations recorded yet."
+      />
+    </main>
+  );
+}
+
 function ProfilePage({ data }) {
   const employee = data.employee;
   const facts = data.facts;
@@ -201,10 +311,16 @@ function App() {
   const [leaveData, setLeaveData] = useState(null);
   const [profileData, setProfileData] = useState(null);
   const [policies, setPolicies] = useState([]);
+  const [historyData, setHistoryData] = useState(null);
+  const [adminData, setAdminData] = useState(null);
+  const [adminFilter, setAdminFilter] = useState("");
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
 
   const employeeId = currentUser?.id;
+  // The Support tab only exists for admins. Server-side the route 403s on its own, so a
+  // hidden tab is convenience, not the access control.
+  const pages = currentUser?.isAdmin ? [...BASE_PAGES, "admin"] : BASE_PAGES;
 
   const activeData = useMemo(() => {
     if (activePage === "dashboard") return dashboardData;
@@ -223,6 +339,15 @@ function App() {
     refreshAll();
   }, [employeeId]);
 
+  // Loaded separately from refreshAll: it's admin-only, and it re-fetches when the filter
+  // changes rather than when the employee's own data does.
+  useEffect(() => {
+    if (!currentUser?.isAdmin || activePage !== "admin") return;
+    api.adminChats(currentUser.id, { employeeId: adminFilter })
+      .then(setAdminData)
+      .catch((err) => showToast(err.message));
+  }, [currentUser?.id, currentUser?.isAdmin, activePage, adminFilter]);
+
   function showToast(message) {
     setToast(message);
     setTimeout(() => setToast(""), 3000);
@@ -232,14 +357,16 @@ function App() {
     if (!employeeId) return;
     setLoading(true);
     try {
-      const [dashboard, leave, profile] = await Promise.all([
+      const [dashboard, leave, profile, history] = await Promise.all([
         api.dashboard(employeeId),
         api.leave(employeeId),
         api.profile(employeeId),
+        api.chatHistory(employeeId),
       ]);
       setDashboardData(dashboard);
       setLeaveData(leave);
       setProfileData(profile);
+      setHistoryData(history);
     } catch (err) {
       showToast(err.message);
     } finally {
@@ -278,7 +405,7 @@ function App() {
           <div className="topnav-links">
             {pages.map((page) => (
               <button key={page} className={activePage === page ? "active" : ""} onClick={() => setActivePage(page)}>
-                {page === "dashboard" ? "Dashboard" : page === "leave" ? "Leave" : page === "profile" ? "My profile" : "Policies"}
+                {PAGE_LABELS[page]}
               </button>
             ))}
           </div>
@@ -293,8 +420,12 @@ function App() {
       {loading && !activeData ? <main className="page"><p>Loading HRMS data...</p></main> : null}
       {activePage === "dashboard" && dashboardData ? <DashboardPage data={dashboardData} onCancel={cancelLeave} /> : null}
       {activePage === "leave" && leaveData ? <LeavePage data={leaveData} employeeId={employeeId} refresh={refreshAll} showToast={showToast} onCancel={cancelLeave} /> : null}
+      {activePage === "history" && historyData ? <HistoryPage messages={historyData.messages} /> : null}
       {activePage === "profile" && profileData ? <ProfilePage data={profileData} /> : null}
       {activePage === "policies" ? <PoliciesPage policies={policies} /> : null}
+      {activePage === "admin" && currentUser.isAdmin ? (
+        <AdminPage data={adminData} users={users} filter={adminFilter} onFilterChange={setAdminFilter} />
+      ) : null}
 
       <ChatWidget employee={currentUser} onLeaveSubmitted={refreshAll} showToast={showToast} />
       {toast ? <div className="toast show">{toast}</div> : null}

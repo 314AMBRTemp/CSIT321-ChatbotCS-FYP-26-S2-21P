@@ -53,6 +53,7 @@ def _blank_answer(text):
         "canSubmitLeave": False,
         "suggestedLeave": None,
         "thinkingSteps": [],
+        "buttons": [],
     }
 
 
@@ -66,9 +67,14 @@ def _merge_rasa_messages(messages):
     Text parts are joined in order; the last "askivy" metadata block wins. A
     flow that only utters a domain response (no custom action) still works —
     it just carries no metadata, which is exactly the neutral default.
+
+    Buttons ride on the message that offers them (Rasa's own collect steps and
+    default patterns emit these). The last set wins, since that is the choice
+    the user is actually being asked to make.
     """
     texts = []
     metadata = {}
+    buttons = []
 
     for message in messages:
         if not isinstance(message, dict):
@@ -79,6 +85,8 @@ def _merge_rasa_messages(messages):
         custom = message.get("custom") or {}
         if isinstance(custom, dict) and isinstance(custom.get("askivy"), dict):
             metadata = custom["askivy"]
+        if isinstance(message.get("buttons"), list) and message["buttons"]:
+            buttons = message["buttons"]
 
     answer = _blank_answer("\n\n".join(t for t in texts if t) or FALLBACK_TEXT)
     answer.update({
@@ -87,6 +95,11 @@ def _merge_rasa_messages(messages):
         "canSubmitLeave": bool(metadata.get("canSubmitLeave", False)),
         "suggestedLeave": metadata.get("suggestedLeave") or None,
         "thinkingSteps": metadata.get("thinkingSteps") or [],
+        "buttons": [
+            {"title": str(b.get("title", "")), "payload": str(b.get("payload", ""))}
+            for b in buttons
+            if isinstance(b, dict) and b.get("title") and b.get("payload")
+        ],
     })
     return answer
 
@@ -120,9 +133,13 @@ def askivy_chat_rasa():
 
     answer = _merge_rasa_messages(messages)
 
+    # Log what the employee saw themselves send, not the wire payload. A clicked button
+    # sends "/SetSlots(confirm_flag_hr=true)" as the message; the support conversation log
+    # should read "Yes, raise it with HR". Falls back to the raw message for typed input,
+    # where the two are the same thing.
     chat = ChatMessage(
         employee_id=employee.id,
-        question=question,
+        question=str(payload.get("displayText") or question),
         response=answer["text"],
         policy_used=answer.get("source"),
     )

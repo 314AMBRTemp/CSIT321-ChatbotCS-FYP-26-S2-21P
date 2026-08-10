@@ -48,7 +48,7 @@ JSON shapes.
   - `compassionate_leave` — filled the `relationship` slot directly from
     "My mother passed away last night" in the *same turn* that started the flow
     (no follow-up question needed), correctly classified as immediate family (5
-    days). Extended family ("my cousin") correctly classified separately (2 days).
+    days). Extended family ("my cousin") correctly classified separately (3 days).
   - `parental_eligibility` — correct for both the eligible case (Sarah, 7 years)
     and the ineligible case (Marcus, 0 years, in probation).
   - `policy_question` — retrieved the right policy for both "notice period" and
@@ -177,7 +177,7 @@ AskIvy/
 |---|---|---|
 | `check_leave_balance` | `action_get_leave_balance` | Reports annual + sick balances |
 | `apply_for_leave` | `action_submit_leave` | Collects type/days/confirmation, files the request |
-| `compassionate_leave` | `action_compassionate_leave` | Classifies relationship, recommends 5 or 2 days |
+| `compassionate_leave` | `action_compassionate_leave` | Classifies relationship, recommends 5 or 3 days |
 | `parental_eligibility` | `action_check_parental_eligibility` | Checks 12-month service rule |
 | `policy_question` | `action_policy_answer` | Cites policy rules via `/api/policies/search` |
 | `career_path_advice` | `action_career_path_advice` | Recommends certs/steps for a department move, via `/api/careers/search` |
@@ -382,6 +382,8 @@ is built from live HRMS data.
 | `rasa train` fails on a `rejections`/`if:` predicate | pypred has no `in` / list syntax — `not in [...]` is invalid even though it's valid Python. Use chained `!=`/`and`/`or` instead. See "Two real bugs" above. |
 | Bot text shows garbled characters or literal `u2022`-style text | Non-ASCII punctuation (em dash, bullet, middle dot) in `actions.py` or `domain.yml`, corrupted by this machine's `cp1252` console. Use ASCII (`--`, `-`, `|`) and set `PYTHONUTF8=1` before launching Rasa. |
 | Edited `domain.yml` or `flows.yml` but nothing changed | `rasa run` loads the domain baked into the trained model, not live from disk. Re-run `rasa train` first. |
+| Edited `actions.py` but the bot's replies are unchanged | `rasa run actions` loads `actions.py` once at boot and has **no auto-reload**. Restart the action server. Watch the asymmetry: Flask's debug reloader *does* pick up `app.py` / `askivy_engine.py` on save, so it is easy to assume Rasa does the same. Symptom to recognise: the REST API returns your new values but the chatbot still gives the old answer. |
+| Edited `hr_policies.json` / `career_paths.json` but answers are stale | `load_policies()` / `load_career_paths()` are `@lru_cache(maxsize=1)`, so the file is read once per process. Restart Flask. |
 | Config rejected on train | Installed Rasa differs from the assumed 3.18 layout. Run `rasa init --template calm` in a scratch dir and reconcile `config.yml` / `endpoints.yml` / `domain.yml`. `flows.yml` and `actions.py` are the portable parts. |
 
 ---
@@ -393,9 +395,9 @@ is built from live HRMS data.
 3. ~~Obtain the Rasa Pro licence key and Anthropic key.~~ Done — in `rasa/.env`.
 4. ~~Run Stage 2 against real Claude output.~~ Done — all 5 flows verified, see
    "Current state" above.
-5. Run `rasa test e2e tests/e2e_test_cases.yml` as a suite and capture the output
-   as validation evidence for the report — the 10 cases should pass given the
-   manual pass already done, but haven't been run together.
-6. Test the frontend widget itself with `VITE_ASKIVY_ENGINE=rasa` set — only the
-   API layer has been driven directly so far, not the React UI.
+5. ~~Run `rasa test e2e tests/e2e_test_cases.yml` as a suite.~~ Done — **12/12
+   passing, 100% on every assertion type**. Two stale cases were fixed (they
+   assumed `compassionate_leave` needed a second turn; it actually completes in
+   one), and cases for `cancel_leave` and `career_path_advice` were added.
+6. ~~Test the frontend widget itself with `VITE_ASKIVY_ENGINE=rasa` set.~~ Done.
 7. Fix the outstanding backend bugs — start with the leave-balance accounting (#1/#2).

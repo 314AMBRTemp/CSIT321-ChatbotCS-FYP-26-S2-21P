@@ -1,5 +1,22 @@
 flows:
 
+  # ── Override of a CALM default pattern ─────────────────────────────────────
+  # Out of the box pattern_chitchat's only step is `utter_cannot_handle`, so any
+  # off-topic message got "I'm sorry, I'm not trained to help with that". Rasa's own
+  # default_flows_for_patterns.yml carries the comment "To enable free-form response
+  # use: - action: utter_free_chitchat_response" -- which is exactly this swap.
+  #
+  # action_free_chitchat calls Claude with the employee's actual message, so it can
+  # genuinely answer. The NLG rephraser cannot do this -- it only rewords a suggested
+  # response and never sees a question. Note this needs NO IntentlessPolicy: the
+  # command processor only downgrades ChitChat to cannot_handle when the pattern uses
+  # the built-in `action_trigger_chitchat`, which this does not.
+  pattern_chitchat:
+    description: Conversation repair flow for off-topic interactions that won't disrupt the main conversation
+    name: pattern chitchat
+    steps:
+      - action: action_free_chitchat
+
   # ── 1. Leave balance ───────────────────────────────────────────────────────
   check_leave_balance:
     description: >
@@ -13,7 +30,10 @@ flows:
     description: >
       The employee wants to book, apply for, request, or submit a leave request
       into the HRMS. Use this when they are asking to take time off, not when
-      they are only asking about policy rules.
+      they are only asking about policy rules. Use this even when the leave type
+      they name is not one we offer -- for example "study leave" or "unpaid
+      leave" -- because this flow validates the type and tells them which kinds
+      are available. Do not ask for clarification in that case.
     steps:
       - collect: leave_type
         description: >
@@ -134,3 +154,18 @@ flows:
           words, taken from what the employee said. For example "Sales",
           "Engineering", "Product", "Design", "Marketing".
       - action: action_career_path_advice
+
+      # Runs on both outcomes -- a matched plan and an honest "no plan yet" --
+      # so the offer to involve HR is always followed through on.
+      - collect: confirm_flag_hr
+        description: >
+          Whether the employee wants this move raised with HR before they act
+          on it. True if they agree, False if they would rather not.
+        next:
+          - if: "slots.confirm_flag_hr"
+            then:
+              - action: utter_hr_flagged
+                next: END
+          - else:
+              - action: utter_hr_not_flagged
+                next: END

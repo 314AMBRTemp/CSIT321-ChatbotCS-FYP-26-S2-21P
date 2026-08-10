@@ -51,6 +51,11 @@ def search_policies(question):
         if any(token in q for token in ["notice", "resign", "quit", "departure"]):
             if policy["id"] == "RESIGN-01":
                 score += 8
+        # Kept narrow on purpose: bare "move"/"department" also appear in career and
+        # leave questions, so only explicit transfer phrasing boosts this one.
+        if any(token in q for token in ["transfer", "internal move", "change department", "switch department", "another department", "different department"]):
+            if policy["id"] == "TRANSFER-01":
+                score += 8
         if "bonus" in q:
             if policy["id"] == "BONUS-01":
                 score += 8

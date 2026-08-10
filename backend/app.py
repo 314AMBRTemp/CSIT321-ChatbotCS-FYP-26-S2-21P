@@ -29,7 +29,9 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        ensure_columns()        # raw SQL only -- must precede any ORM query
         seed_demo_data()
+        ensure_admin_accounts()  # ORM -- must follow seeding
 
     @app.get("/api/health")
     def health():
@@ -112,6 +114,51 @@ def create_app():
         db.session.commit()
 
         return jsonify({"message": "Leave request cancelled.", "leave": leave.to_dict(), "facts": employee_facts(employee)})
+
+    @app.get("/api/employees/<employee_id>/chat")
+    def employee_chat_history(employee_id):
+        """One employee's own conversation history, newest first."""
+        employee = Employee.query.get_or_404(employee_id)
+        messages = sorted(employee.chat_messages, key=lambda m: m.created_at, reverse=True)
+        return jsonify({
+            "employee": employee.to_dict(),
+            "messages": [m.to_dict() for m in messages],
+        })
+
+    @app.get("/api/admin/chats")
+    def admin_chats():
+        """Every conversation, for the support views. Optional ?employeeId= filter.
+
+        The requester is identified by a query parameter, which is trivially spoofable --
+        this app has no sessions or passwords anywhere, so this checks a ROLE, it does not
+        authenticate an IDENTITY. Real deployment would put this behind proper auth; the
+        403 below exists so the shape is right and the gap is explicit rather than absent.
+        """
+        requester_id = str(request.args.get("requesterId", "")).strip()
+        requester = Employee.query.get(requester_id) if requester_id else None
+        if not requester or not requester.is_admin:
+            return jsonify({"error": "Support access required."}), 403
+
+        query = ChatMessage.query
+        employee_filter = str(request.args.get("employeeId", "")).strip()
+        if employee_filter:
+            query = query.filter_by(employee_id=employee_filter)
+
+        try:
+            limit = min(int(request.args.get("limit", 200)), 1000)
+        except (TypeError, ValueError):
+            return jsonify({"error": "limit must be a whole number."}), 400
+
+        rows = query.order_by(ChatMessage.created_at.desc()).limit(limit).all()
+        names = {e.id: e.name for e in Employee.query.all()}
+        return jsonify({
+            "total": query.count(),
+            "returned": len(rows),
+            "messages": [
+                {**m.to_dict(), "employeeId": m.employee_id, "employeeName": names.get(m.employee_id, m.employee_id)}
+                for m in rows
+            ],
+        })
 
     @app.get("/api/policies")
     def policies():
@@ -227,6 +274,76 @@ def parse_date(value):
         return None
 
 
+SUPPORT_ACCOUNT_ID = "nadia"
+
+# Employees allowed into the support views. Comma-separated ids; override per deployment.
+# In a real system this comes from an identity provider group, not a seeded list.
+ADMIN_EMPLOYEE_IDS = [
+    e.strip() for e in os.getenv("ADMIN_EMPLOYEE_IDS", SUPPORT_ACCOUNT_ID).split(",") if e.strip()
+]
+
+
+def support_account():
+    """The HR person the support views are demoed as.
+
+    Built by a factory rather than inline because two paths need it: a fresh seed, and
+    ensure_schema() back-filling a database that already has rows.
+    """
+    return Employee(
+        id=SUPPORT_ACCOUNT_ID, initials="NR", name="Nadia Rahman",
+        role="HR Business Partner", department="Human Resources",
+        start_date=date(2021, 3, 1), tenure_years=5, marital_status="Married",
+        recent_event=None, annual_leave_entitlement=21, annual_leave_taken=6,
+        probation=False, salary_band="Band 5", is_admin=True,
+    )
+
+
+def ensure_columns():
+    """Add columns that `db.create_all()` won't. Runs BEFORE any ORM query.
+
+    `create_all()` creates missing TABLES but never missing COLUMNS, so adding `is_admin`
+    breaks any database that already has rows -- both the local SQLite file and the live
+    Postgres on Render.
+
+    Ordering matters and is easy to get wrong: this uses the inspector and raw SQL only,
+    with no ORM queries, because the very first thing seed_demo_data() does is
+    `Employee.query.first()` -- which SELECTs every mapped column, including the one that
+    doesn't exist yet. Anything touching the ORM has to wait until after this has run.
+
+    A real project would use Alembic. This is the smallest thing that avoids hand-surgery
+    on a live database days before a demo.
+    """
+    inspector = db.inspect(db.engine)
+    if "employees" not in inspector.get_table_names():
+        return  # brand new database; create_all + seed handle it
+
+    columns = {c["name"] for c in inspector.get_columns("employees")}
+    if "is_admin" not in columns:
+        # DEFAULT FALSE is valid on both SQLite (3.23+) and Postgres. `DEFAULT 0` is not --
+        # Postgres rejects an integer default on a BOOLEAN column.
+        db.session.execute(db.text(
+            "ALTER TABLE employees ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+        db.session.commit()
+
+
+def ensure_admin_accounts():
+    """Make sure the support account exists and ADMIN_EMPLOYEE_IDS is applied.
+
+    Runs AFTER seed_demo_data(), because seeding bails out the moment any employee exists
+    and this function creates one.
+    """
+    if Employee.query.first() and not Employee.query.get(SUPPORT_ACCOUNT_ID):
+        db.session.add(support_account())
+        db.session.commit()
+
+    for employee in Employee.query.all():
+        should_be_admin = employee.id in ADMIN_EMPLOYEE_IDS
+        if employee.is_admin != should_be_admin:
+            employee.is_admin = should_be_admin
+    db.session.commit()
+
+
 def seed_demo_data():
     if Employee.query.first():
         return
@@ -331,6 +448,7 @@ def seed_demo_data():
     )
 
     db.session.add_all([
+        support_account(),
         sarah, marcus,
         david, priya, aiden,
         ethan,

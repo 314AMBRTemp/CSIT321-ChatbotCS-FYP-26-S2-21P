@@ -121,14 +121,45 @@ test_cases:
           - flow_started: cancel_leave
           - action_executed: action_find_pending_leave
 
+  # One turn, not two: the command generator fills target_department from the same
+  # message that starts the flow, so the action runs immediately. The flow then asks
+  # whether to raise the move with HR.
   - test_case: career path advice for a defined pair
     steps:
       - user: "What would it take to move into Sales?"
         assertions:
           - flow_started: career_path_advice
-      - user: "Sales"
-        assertions:
           - slot_was_set:
               - name: target_department
                 value: "Sales"
           - action_executed: action_career_path_advice
+      - user: "yes please raise it with HR"
+        assertions:
+          - slot_was_set:
+              - name: confirm_flag_hr
+                value: true
+          - bot_uttered:
+              utter_name: utter_hr_flagged
+
+  - test_case: declining the HR follow-up after career advice
+    steps:
+      - user: "How do I move into Design?"
+        assertions:
+          - flow_started: career_path_advice
+          - action_executed: action_career_path_advice
+      - user: "no thanks, not right now"
+        assertions:
+          - slot_was_set:
+              - name: confirm_flag_hr
+                value: false
+          - bot_uttered:
+              utter_name: utter_hr_not_flagged
+
+  # pattern_chitchat runs action_free_chitchat (which calls Claude), NOT the
+  # utter_free_chitchat_response response -- see the override in data/flows.yml.
+  - test_case: off-topic messages get a chitchat reply, not a flow
+    steps:
+      - user: "Do you follow the football at all?"
+        assertions:
+          - flow_started: pattern_chitchat
+          - action_executed: action_free_chitchat

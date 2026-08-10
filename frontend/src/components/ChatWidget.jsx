@@ -3,10 +3,10 @@ import { api } from "../api";
 
 const suggestions = [
   "My cousin passed away, is there leave for this?",
-  "What is the best leave option for me next week?",
   "How many leave days do I have?",
   "Am I eligible for parental leave?",
-  "Q2: how does the AI actually think?",
+  "Cancel my pending leave request",
+  "What would it take to move into Sales?",
 ];
 
 function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
@@ -20,6 +20,11 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
   useEffect(() => {
     setMessages([]);
     setInput("");
+    // Clear the Rasa tracker too, not just the transcript. sender_id is the employee id,
+    // so an abandoned half-finished flow otherwise survives a sign-out: the widget looks
+    // empty but the bot's next reply picks up mid-flow ("How many days do you need?").
+    // Best-effort -- a failure here shouldn't stop the widget rendering.
+    if (employee?.id) api.askIvyRasaReset(employee.id).catch(() => {});
   }, [employee?.id]);
 
   useEffect(() => {
@@ -33,7 +38,9 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
     inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 130)}px`;
   }, [input]);
 
-  async function ask(customQuestion) {
+  // `displayText` lets a button send its /SetSlots(...) payload while the
+  // transcript shows the human-readable title the user actually clicked.
+  async function ask(customQuestion, displayText) {
     const question = (customQuestion || input).trim();
     if (!question || loading) return;
 
@@ -41,7 +48,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
     setLoading(true);
     setMessages((prev) => [
       ...prev,
-      { role: "user", text: question },
+      { role: "user", text: displayText || question },
       { role: "thinking", steps: [
         { tag: "Understand", text: "Reading your HR situation" },
         { tag: "Retrieve", text: "Searching relevant policy documents" },
@@ -51,7 +58,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
     ]);
 
     try {
-      const answer = await api.askIvy(employee.id, question);
+      const answer = await api.askIvy(employee.id, question, displayText);
       setMessages((prev) => [
         ...prev.filter((m) => m.role !== "thinking"),
         { role: "assistant", ...answer },
@@ -115,7 +122,15 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
               </div>
             </div>
           ) : messages.map((message, index) => (
-            <Message key={index} message={message} employee={employee} onSubmitLeave={submitLeave} />
+            <Message
+              key={index}
+              message={message}
+              employee={employee}
+              onSubmitLeave={submitLeave}
+              onButton={ask}
+              isLast={index === messages.length - 1}
+              loading={loading}
+            />
           ))}
         </div>
 
@@ -135,7 +150,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
   );
 }
 
-function Message({ message, employee, onSubmitLeave }) {
+function Message({ message, employee, onSubmitLeave, onButton, isLast, loading }) {
   if (message.role === "user") {
     return <div className="cb-user"><div className="cb-user-bubble">{message.text}</div></div>;
   }
@@ -156,6 +171,22 @@ function Message({ message, employee, onSubmitLeave }) {
         {message.isRecommendation ? <div className="cb-bot-tag action">Recommendation</div> : <div className="cb-bot-tag personal">Personalised for {employee.name.split(" ")[0]}</div>}
         <div className="cb-bot-text">{message.text}</div>
         {message.source ? <div className="cb-source">§ {message.source}</div> : null}
+        {/* Only the newest reply keeps its buttons — stale choices from earlier
+            turns are no longer answerable. The rule-based engine sends none. */}
+        {isLast && message.buttons?.length ? (
+          <div className="cb-buttons">
+            {message.buttons.map((button) => (
+              <button
+                className="cb-btn"
+                key={button.payload}
+                disabled={loading}
+                onClick={() => onButton(button.payload, button.title)}
+              >
+                {button.title}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {message.canSubmitLeave && message.suggestedLeave ? (
           <div className="cb-action-card">
             <strong>Leave request ready</strong><br />

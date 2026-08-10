@@ -19,7 +19,7 @@ Parental leave is available to employees who have completed at least 12 months o
 - Birth mothers are entitled to 16 weeks of paid maternity leave
 - Partners are entitled to 4 weeks of paid paternity leave
 - Parental leave must commence within 12 months of the child's birth or adoption
-- Principal Engineers and above receive an additional 2 weeks of flexible return-to-work leave at reduced hours
+- Employees at Principal, Lead, or Head-of-Department level, in any department, receive an additional 2 weeks of flexible return-to-work leave at reduced hours
 
 ## LEAVE-03 Sick Leave
 
@@ -35,8 +35,8 @@ Compassionate leave supports employees during bereavement or serious family emer
 
 - Employees may request compassionate leave for bereavement or serious family emergencies
 - Up to 5 paid working days may be granted for immediate family members
-- Immediate family includes spouse or partner, parent, child, sibling, grandparent, or parent-in-law
-- Up to 2 paid working days may be granted for extended family members such as aunt, uncle, cousin, niece, or nephew, subject to manager approval
+- Immediate family includes spouse or partner, parent, child, sibling, or grandparent
+- Up to 3 paid working days may be granted for extended family members such as aunt, uncle, cousin, niece, nephew, or in-law, subject to manager approval
 - Supporting documents may be requested by HR
 - Additional time may be taken using annual leave or unpaid leave with HR approval
 
@@ -45,7 +45,7 @@ Compassionate leave supports employees during bereavement or serious family emer
 Lumen & Vale operates a hybrid working model.
 
 - Employees may work remotely up to 3 days per week with manager approval
-- Engineering staff returning from parental leave may request a temporary fully remote arrangement for up to 3 months
+- Employees in any department returning from parental leave may request a temporary fully remote arrangement for up to 3 months
 - Employees in probation are expected on-site at least 4 days per week
 - All remote work must be logged in the HR portal
 
@@ -65,6 +65,17 @@ Notice period depends on probation status and salary band.
 - Confirmed employees in Bands 1 to 3 must give 4 weeks' notice
 - Confirmed employees in Bands 4 and above must give 8 weeks' notice
 - Accrued but untaken annual leave is paid out on departure
+
+## TRANSFER-01 Internal Transfer
+
+Employees may apply to move to another department or role once they meet the service and endorsement requirements.
+
+- Employees must have completed at least 12 months in their current role to apply for an internal transfer
+- Employees subject to an active disciplinary process are not eligible to apply
+- A transfer request requires endorsement from both the current manager and the receiving department's head
+- HR facilitates a handover plan, typically 2 to 4 weeks
+- Moving into a materially different role carries a 3-month transfer probation; lateral moves within a similar role type do not
+- Employees may not apply for another internal transfer within 12 months of a completed transfer, except by agreement with HR
 
 ## BONUS-01 Performance Bonus
 

@@ -49,7 +49,7 @@ Expected explanation:
 - AskIvy recognises bereavement.
 - It retrieves Compassionate Leave.
 - It understands that cousin is extended family.
-- It recommends up to 2 paid working days, subject to approval.
+- It recommends up to 3 paid working days, subject to approval.
 - It prepares a leave request action.
 
 ## 5. Submit through AskIvy

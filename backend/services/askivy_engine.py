@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import date, timedelta
 from services.policy_repository import search_policies
@@ -5,9 +6,25 @@ from services.policy_repository import search_policies
 IMMEDIATE_FAMILY = {
     "spouse", "husband", "wife", "partner", "parent", "father", "mother", "mum", "mom", "dad",
     "child", "son", "daughter", "sibling", "brother", "sister", "grandparent", "grandfather", "grandmother",
-    "grandpa", "grandma", "parent-in-law", "father-in-law", "mother-in-law"
+    "grandpa", "grandma"
 }
 EXTENDED_FAMILY = {"cousin", "aunt", "uncle", "niece", "nephew", "relative"}
+
+IMMEDIATE_FAMILY_DAYS = 5
+EXTENDED_FAMILY_DAYS = 3
+
+# Mirrors the constant in rasa/actions/actions.py. Duplicating a constant across the two
+# engines is safe; duplicating a *rule* is what caused the senior-parental-top-up drift,
+# which is why that one moved into employee_facts() instead.
+HR_CONTACT_EMAIL = os.getenv("HR_CONTACT_EMAIL", "hr@lumenvale.com")
+
+
+def _hr_handoff(context):
+    """Referral the employee can act on -- see _hr_handoff in rasa/actions/actions.py."""
+    return f" You can reach HR at {HR_CONTACT_EMAIL} -- mention {context} so they can pick it up from there."
+
+# Roles that qualify for the extra 2 weeks of flexible return-to-work leave.
+SENIOR_ROLE_TOKENS = ("principal", "lead", "head")
 
 def employee_facts(employee):
     sick_taken = sum(req.number_of_days for req in employee.leave_requests if req.leave_type.lower() == "sick" and req.status not in ("Rejected", "Cancelled"))
@@ -21,6 +38,12 @@ def employee_facts(employee):
         "eligibleForParental": employee.tenure_years >= 1,
         "notice": "1 week" if employee.probation else ("8 weeks" if band >= 4 else "4 weeks"),
         "bonusEligible": not employee.probation,
+        # Principal / Lead / Head-of-Department level, in any department. Derived here
+        # so the Rasa actions can read it off /api/employees/<id> instead of repeating
+        # the role test in a second codebase.
+        "eligibleForSeniorParentalTopUp": any(
+            token in (employee.role or "").lower() for token in SENIOR_ROLE_TOKENS
+        ),
     }
 
 def _is_bereavement(q):
@@ -34,13 +57,20 @@ def _is_recommendation(q):
 
 def _detect_relationship(q):
     low = q.lower()
+
+    # In-laws are extended family under the policy. Checked FIRST because matching is
+    # substring-based: "mother-in-law" contains "mother" and would otherwise be read
+    # as immediate family and over-quoted at 5 days.
+    if "in-law" in low or "in law" in low:
+        return {"relationship": "in-law", "group": "extended", "suggestedDays": EXTENDED_FAMILY_DAYS}
+
     for word in IMMEDIATE_FAMILY:
         if word in low:
-            return {"relationship": word, "group": "immediate", "suggestedDays": 5}
+            return {"relationship": word, "group": "immediate", "suggestedDays": IMMEDIATE_FAMILY_DAYS}
     for word in EXTENDED_FAMILY:
         if word in low:
-            return {"relationship": word, "group": "extended", "suggestedDays": 2}
-    return {"relationship": "family member", "group": "review", "suggestedDays": 2}
+            return {"relationship": word, "group": "extended", "suggestedDays": EXTENDED_FAMILY_DAYS}
+    return {"relationship": "family member", "group": "review", "suggestedDays": EXTENDED_FAMILY_DAYS}
 
 def _source(policies):
     titles = []
@@ -123,11 +153,16 @@ def answer_question(employee, question):
         if relation["group"] == "immediate":
             detail = f"For a {relation['relationship']}, the policy treats this as immediate family bereavement and allows up to 5 paid working days, subject to approval and possible supporting documents."
         elif relation["group"] == "extended":
-            detail = f"For a {relation['relationship']}, the policy treats this as extended family bereavement and allows up to 2 paid working days, subject to manager approval."
+            detail = f"For a {relation['relationship']}, the policy treats this as extended family bereavement and allows up to 3 paid working days, subject to manager approval."
         else:
             detail = "The policy covers bereavement, but HR or the manager should confirm the relationship category and required supporting documents."
+        # Only the unrecognised case needs a handoff -- the other two already have an answer.
+        # Deliberately does NOT quote relation["relationship"]: this branch is reached when the
+        # regex matched nothing, so that value is the literal fallback "family member", not
+        # anything the employee actually said.
+        handoff = _hr_handoff("you're asking about compassionate leave and they'll need to confirm the relationship category") if relation["group"] == "review" else ""
         return {
-            "text": f"I'm sorry to hear that. The most relevant HR policy is Compassionate Leave, not annual leave or sick leave. {detail} If more time is needed, the better HR route is to combine compassionate leave with annual leave or request a special arrangement through HR.",
+            "text": f"I'm sorry to hear that. The most relevant HR policy is Compassionate Leave, not annual leave or sick leave. {detail} If more time is needed, the better HR route is to combine compassionate leave with annual leave or request a special arrangement through HR.{handoff}",
             "source": "Compassionate Leave",
             "isRecommendation": True,
             "canSubmitLeave": True,
@@ -143,7 +178,7 @@ def answer_question(employee, question):
             if relation["group"] == "immediate":
                 note = f"The policy allows up to 5 paid working days for immediate family bereavement involving a {relation['relationship']}."
             elif relation["group"] == "extended":
-                note = f"The policy allows up to 2 paid working days for extended family bereavement involving a {relation['relationship']}, subject to manager approval."
+                note = f"The policy allows up to 3 paid working days for extended family bereavement involving a {relation['relationship']}, subject to manager approval."
             else:
                 note = "HR or the manager should confirm the relationship category and any supporting documents."
         elif leave_type == "Sick":
@@ -175,16 +210,16 @@ def answer_question(employee, question):
         }
 
     if any(token in q for token in ["parental", "maternity", "paternity", "baby", "birth", "child", "adoption"]):
-        extra = " Because your role is Principal Engineer, the policy also mentions an additional 2 weeks of flexible return-to-work leave at reduced hours." if "principal" in employee.role.lower() else ""
-        text = f"Yes, your profile meets the 12-month continuous service requirement for parental leave.{extra}" if facts["eligibleForParental"] else "Based on your profile, you are not yet eligible because parental leave requires at least 12 months of continuous service. Please confirm with HR if there are special circumstances."
+        extra = " Because you are at Principal, Lead, or Head-of-Department level, the policy also gives you an additional 2 weeks of flexible return-to-work leave at reduced hours." if facts["eligibleForSeniorParentalTopUp"] else ""
+        text = f"Yes, your profile meets the 12-month continuous service requirement for parental leave.{extra}" if facts["eligibleForParental"] else "Based on your profile, you are not yet eligible because parental leave requires at least 12 months of continuous service." + _hr_handoff(f"you're asking about parental leave with {employee.tenure_years} year(s) of service")
         return {"text": text, "source": "Parental Leave", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
 
     if any(token in q for token in ["work from home", "wfh", "remote", "hybrid", "home full-time", "full time"]):
         answer = "Lumen & Vale uses a hybrid model where employees may work remotely up to 3 days per week with manager approval."
         if employee.probation:
             answer += " Since you are still in probation, the policy expects you to be on-site at least 4 days per week."
-        if employee.department == "Engineering" and any(token in (q + " " + (employee.recent_event or "")).lower() for token in ["parental", "birth", "baby", "return"]):
-            answer += " Engineering staff returning from parental leave may request a temporary fully remote arrangement for up to 3 months."
+        if any(token in (q + " " + (employee.recent_event or "")).lower() for token in ["parental", "birth", "baby", "return"]):
+            answer += " Employees in any department returning from parental leave may request a temporary fully remote arrangement for up to 3 months."
         return {"text": answer, "source": "Work From Home / Hybrid", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
 
     if any(token in q for token in ["notice", "resign", "resignation", "quit"]):

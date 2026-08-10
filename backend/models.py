@@ -24,6 +24,10 @@ class Employee(db.Model):
     annual_leave_taken = db.Column(db.Integer, nullable=False, default=0)
     probation = db.Column(db.Boolean, nullable=False, default=False)
     salary_band = db.Column(db.String(30), nullable=False)
+    # Gates the support/admin views. Demo-grade: there are no passwords anywhere in this
+    # app, so this identifies a role, it does not authenticate one. See ensure_schema()
+    # in app.py for how existing databases pick the column up.
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
 
     leave_requests = db.relationship("LeaveRequest", back_populates="employee", cascade="all, delete-orphan")
     chat_messages = db.relationship("ChatMessage", back_populates="employee", cascade="all, delete-orphan")
@@ -43,6 +47,7 @@ class Employee(db.Model):
             "annualLeaveTaken": self.annual_leave_taken,
             "probation": self.probation,
             "salaryBand": self.salary_band,
+            "isAdmin": self.is_admin,
         }
 
 class LeaveRequest(db.Model):
