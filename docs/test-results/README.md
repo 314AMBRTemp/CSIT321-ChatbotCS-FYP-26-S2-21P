@@ -1,21 +1,24 @@
 # Test & Measurement Evidence
 
-Generated artifacts from validation runs. Regenerate with:
+Two suites, proving different things. Neither is sufficient alone — the split matters and
+is explained below.
+
+| Suite | Proves | Run with |
+|---|---|---|
+| **Rasa e2e** (`rasa/tests/e2e_test_cases.yml`) | Claude routes to the right flow and fills the right slots | `rasa test e2e …` |
+| **API checks** (`tests/api_checks.py`) | The answers are factually correct against real HRMS data | `backend\.venv\Scripts\python.exe tests\api_checks.py` |
+
+Both need Flask (`:5000`), the action server (`:5055`) and the Rasa server (`:5005`) up.
+
+---
+
+## 1. Rasa end-to-end — 15 / 15, 100% on every assertion type
 
 ```powershell
 cd rasa
 .venv\Scripts\activate
 rasa test e2e tests/e2e_test_cases.yml -o ../docs/test-results/e2e-results.yml --coverage-report --coverage-output-path ../docs/test-results/coverage
 ```
-
-Requires Flask (`:5000`) and the action server (`:5055`) running — the custom actions call
-the live REST API, so this exercises the real stack, not mocks.
-
----
-
-## End-to-end tests — 2026-08-10
-
-**15 / 15 passed. 100% on every assertion type.**
 
 | Assertion type | Accuracy |
 |---|---|
@@ -24,59 +27,100 @@ the live REST API, so this exercises the real stack, not mocks.
 | `slot_was_set` | 100.00% |
 | `bot_uttered` | 100.00% |
 
-Every case runs against **live Claude output** — the command generator makes a real
-Anthropic API call per turn. These are not recorded fixtures.
+Every case runs against **live Claude output** — a real Anthropic API call per turn, not
+recorded fixtures. That makes this meaningful evidence for the part of the system that is
+non-deterministic.
 
-Two of the fifteen are **regression guards** rather than feature tests, each added after a
-real defect:
+### ⚠️ What this suite does NOT prove
 
-- *"a compassionate leave policy question is not treated as a bereavement"* — the
-  `compassionate_leave` flow used to swallow neutral policy questions and open with
-  "I'm sorry for your loss", which is wrong for someone just reading up on entitlements.
-- *"declining the HR follow-up after career advice"* — covers the branch of
-  `career_path_advice` that files nothing.
+**Rasa sets `sender_id` to the test case name plus a timestamp.** In this system
+`sender_id` *is* the HRMS employee id (see the module docstring in `rasa/actions/actions.py`).
+So every e2e test runs against an employee that **does not exist**, every HRMS-backed action
+takes its API-unreachable branch, and the bot actually replies:
+
+> "I can't reach the HRMS right now, so I don't want to guess at your numbers."
+
+The assertions still pass, because `action_executed` checks that an action *ran*, never what
+it *returned*. Verified directly by posting a test-shaped sender to the Rasa REST webhook and
+comparing against a real employee id.
+
+The comment at the top of `e2e_test_cases.yml` claiming the cases "exercise the seeded
+employees" reflects the original intent, not the behaviour — the runner overrides the sender.
+
+**Consequence:** this suite validates routing. Suite 2 validates answers. Quoting "15/15
+passing" as evidence the assistant answers correctly would be wrong.
 
 ### Flow coverage — 86.96% (20 of 23 steps)
 
-| Flow | Coverage | Steps | Missing |
-|---|---|---|---|
-| check leave balance | 100% | 1 | — |
-| apply for leave | 100% | 5 | — |
-| compassionate leave | 100% | 2 | — |
-| parental eligibility | 100% | 1 | — |
-| policy question | 100% | 2 | — |
-| career path advice | 100% | 5 | — |
-| **cancel leave** | **57.14%** | 7 | **3** (`flows.yml` 91-92, 94-95, 102-105) |
-| **Total** | **86.96%** | 23 | 3 |
+| Flow | Coverage | Missing |
+|---|---|---|
+| check leave balance · apply for leave · compassionate leave · parental eligibility · policy question · career path advice | 100% | — |
+| **cancel leave** | **57.14%** | 3 steps |
+| **Total** | **86.96%** | 3 |
 
-**The one real gap is `cancel_leave`.** Its three branches are covered unevenly: the
-one-pending-request path is tested, but the **zero-pending** branch (`utter_no_pending_leave`)
-and the **multiple-pending** branch (the `leave_to_cancel` disambiguation collect) are not.
+The `cancel_leave` gap is **structural, not an oversight**. Its uncovered steps are the
+successful cancellation, the decline branch, and the multi-pending branch — all of which sit
+behind `action_find_pending_leave` finding at least one pending request. It never can, because
+the employee doesn't exist, so `pending_leave_count` is always 0 and only the zero-pending
+branch is reachable.
 
-Both are awkward to test because they depend on database state — the seed data gives exactly
-one employee a single pending request, and cancelling it in a test mutates that state for the
-next run. Covering them properly needs either a seeded fixture employee with two pending
-requests, or a reset step before the suite. Worth doing; not done.
+Those three paths are covered by suite 2 instead, which is the right place for them.
+
+Note also that `career_path_advice` shows 100% while its action bailed at the API-down branch
+before doing any career lookup — a good illustration of what step coverage does and doesn't
+tell you here.
+
+### Regression guards
+
+Two of the fifteen exist because of real defects found in this project:
+
+- *"a compassionate leave policy question is not treated as a bereavement"* — the flow used to
+  swallow neutral policy questions and open with "I'm sorry for your loss".
+- *"declining the HR follow-up after career advice"* — covers the branch that files nothing.
 
 ### Files
 
 | File | What it is |
 |---|---|
-| `e2e-results_passed.yml` | Full transcript of each passing case |
+| `e2e-results_passed.yml` | Transcript of each passing case |
 | `e2e-results_failed.yml` | Empty — no failures |
-| `coverage/coverage_report_for_passed_tests.csv` | Per-flow coverage, source of the table above |
-| `coverage/commands_histogram_for_passed_tests.png` | Distribution of commands Claude generated (`StartFlow`, `SetSlot`, `ChitChat`, …) |
-| `coverage/passed/e2e_test_cases.yml` | The cases that passed, as executed |
+| `coverage/coverage_report_for_passed_tests.csv` | Per-flow coverage |
+| `coverage/commands_histogram_for_passed_tests.png` | Distribution of commands Claude generated |
 
 ---
 
-## Latency — 2026-08-10
+## 2. API checks — 23 / 23
 
-Measured warm (first call after a restart discarded), 3 rounds, via `/api/askivy/chat-rasa`.
+```powershell
+backend\.venv\Scripts\python.exe tests\api_checks.py
+```
+
+Drives the same endpoints the widget uses, with **real seeded employee ids**, and asserts on
+the content of the reply. Exits non-zero on failure, so it can gate a commit.
+
+| Group | What it verifies |
+|---|---|
+| Real data reaches the reply | The balance quoted matches `employee_facts()`, and is not the API-down message |
+| Compassionate day counts | mother → 5, cousin → 3, mother-in-law → 3, **on both engines** — the four policy contradictions corrected on 2026-08-09 |
+| Senior parental top-up | Rachel (Head of Sales) and Mei Ling (Lead) get it; Priya (Software Engineer) does not |
+| Career path + handoff | Real certification cited, transfer requirement cited, no-match hands off to HR with department context |
+| Policy vs bereavement | A policy lookup returns policy text and no condolences |
+| **Cancel restores balance** | Submit deducts a day, cancel restores it, no pending left behind — the branch e2e cannot reach |
+| Support access | Admin 200, non-admin 403, no requester 403 |
+
+The cancel check is **self-seeding and idempotent**: it clears any pending requests left by an
+earlier run, creates exactly one, cancels it through the chat flow, and asserts the balance
+returns to its starting value. Verified by running twice in succession.
+
+---
+
+## 3. Latency — 2026-08-10
+
+Measured warm (first call after restart discarded), 3 rounds, via `/api/askivy/chat-rasa`.
 
 | Interaction | Before | After | LLM calls after |
 |---|---|---|---|
-| Completed flow (e.g. leave balance) | ~8.3s | **~6.0s** | 2 |
+| Completed flow | ~8.3s | **~6.0s** | 2 |
 | Mid-flow question | ~3.6s | ~4.5s | 1 |
 | Chitchat | ~5.1s | ~4.8s | 2 |
 | Rule-based engine, same question | — | **37ms** | 0 |
@@ -86,25 +130,24 @@ every completed flow — was being rewritten by the NLG rephraser, costing a ful
 round trip to reword one fixed sentence. Overriding it with fixed text removed that call.
 
 Mid-flow and chitchat moved within noise (mid-flow ranged 3976–5368ms across rounds), so the
-Haiku rephraser swap and the `max_tokens` reduction are not independently evidenced as wins.
+Haiku rephraser swap and the `max_tokens` reduction are **not** independently evidenced as wins.
 
 **Remaining floor: ~4s is the single Claude command-generation call.** The only lever that
-moves it meaningfully is running command generation on Haiku, which is untested for accuracy
-and was deliberately not attempted before the demo.
+moves it meaningfully is running command generation on Haiku, untested for accuracy and
+deliberately not attempted before the demo.
 
-**Cold start is ~12.5s** — the first request after a restart. Send a throwaway message before
-demoing.
+**Cold start is ~12.5s.** Send a throwaway message before demoing.
 
-The ~200× gap between the two engines is a genuine finding for the report: it quantifies what
-the LLM buys (flexible language understanding) against what it costs (latency).
+The ~200× gap between the engines quantifies what the LLM buys (flexible language
+understanding) against what it costs (latency).
 
 ---
 
 ## Caveats
 
-- Both numbers above are single-machine, single-run measurements on a developer laptop, not
-  a benchmark. Latency in particular varies with network conditions to the Anthropic API.
-- The e2e suite asserts on **flows, slots, and actions** — not on reply wording. It will not
-  catch a reply that is worded badly or cites a wrong figure, only one that routes wrongly.
-  The policy-figure corrections on 2026-08-09 were found by reading the source document
-  against the code, not by these tests.
+- Latency figures are single-machine, single-run on a developer laptop, not a benchmark, and
+  vary with network conditions to the Anthropic API.
+- Neither suite checks reply *wording* or tone. The policy-figure errors corrected on
+  2026-08-09 were found by reading the source policy document against the code; the
+  condolences-on-a-policy-question defect was found by a human reading a suggestion chip.
+  Both would have passed every automated check at the time.
