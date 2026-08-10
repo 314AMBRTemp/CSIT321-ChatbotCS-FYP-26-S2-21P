@@ -114,6 +114,16 @@ test_cases:
           - flow_started: policy_question
           - action_executed: action_policy_answer
 
+  # Regression guard. compassionate_leave used to swallow this and open with "I'm sorry for
+  # your loss" -- wrong for someone just reading up on entitlements. It must reach
+  # policy_question instead.
+  - test_case: a compassionate leave policy question is not treated as a bereavement
+    steps:
+      - user: "What is the compassionate leave policy?"
+        assertions:
+          - flow_started: policy_question
+          - action_executed: action_policy_answer
+
   - test_case: cancelling a leave request with none pending is handled honestly
     steps:
       - user: "I'd like to cancel my pending leave request"

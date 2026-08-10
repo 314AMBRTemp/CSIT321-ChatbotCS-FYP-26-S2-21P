@@ -110,6 +110,14 @@ test_results:
     - flow_started: policy_question
     - action_executed: action_policy_answer
 
+- name: a compassionate leave policy question is not treated as a bereavement
+  pass_status: true
+  expected_steps:
+  - user: "What is the compassionate leave policy?"
+    assertions:
+    - flow_started: policy_question
+    - action_executed: action_policy_answer
+
 - name: cancelling a leave request with none pending is handled honestly
   pass_status: true
   expected_steps:

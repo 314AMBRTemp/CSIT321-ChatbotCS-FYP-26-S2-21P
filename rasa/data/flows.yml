@@ -106,8 +106,15 @@ flows:
   compassionate_leave:
     description: >
       Someone close to the employee has died, or there is a serious family
-      emergency or funeral. The employee needs bereavement support and to know
-      what leave applies. This takes priority over generic leave questions.
+      emergency or funeral, or the employee says they need to take compassionate
+      leave. They need bereavement support and to know what leave applies. This
+      takes priority over generic leave questions.
+      Do NOT use this flow when the employee is only asking what the
+      compassionate leave policy says -- for example "what is the compassionate
+      leave policy?" or "how many days of compassionate leave do we get?" --
+      with no sign that a bereavement has actually happened. Use
+      policy_question for those, because this flow opens by offering
+      condolences, which is wrong for someone simply reading up on the policy.
     steps:
       - collect: relationship
         description: >

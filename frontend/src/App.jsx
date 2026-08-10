@@ -168,7 +168,7 @@ function LeavePage({ data, employeeId, refresh, showToast, onCancel }) {
 
       <div className="section-title">Leave history</div>
       <LeaveTable rows={data.leaveHistory} onCancel={onCancel} />
-      <div className="hint-box">💡 You can also apply for leave by chatting with AskIvy — try: <em>“My cousin passed away, is there leave for this?”</em></div>
+      <div className="hint-box">💡 You can also apply for leave by chatting with AskIvy — try: <em>“I need to take compassionate leave”</em></div>
     </main>
   );
 }

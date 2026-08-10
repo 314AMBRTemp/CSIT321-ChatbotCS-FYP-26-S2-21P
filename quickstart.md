@@ -287,8 +287,8 @@ cd frontend; npm install; npm run dev     # :5173
 ```
 
 Log in as Sarah Tan, open AskIvy, and ask *"How many leave days do I have?"* and
-*"My cousin passed away, is there leave for this?"* — that is the **rule-based**
-engine. Confirm this works before Stage 2.
+*"I need to take compassionate leave"* — that is the **rule-based** engine. Confirm
+this works before Stage 2.
 
 > `gunicorn` will not run on Windows locally — expected, it is only for Render.
 

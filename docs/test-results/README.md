@@ -15,7 +15,7 @@ the live REST API, so this exercises the real stack, not mocks.
 
 ## End-to-end tests — 2026-08-10
 
-**14 / 14 passed. 100% on every assertion type.**
+**15 / 15 passed. 100% on every assertion type.**
 
 | Assertion type | Accuracy |
 |---|---|
@@ -24,10 +24,17 @@ the live REST API, so this exercises the real stack, not mocks.
 | `slot_was_set` | 100.00% |
 | `bot_uttered` | 100.00% |
 
-Model under test: `20260810-152731-taxonomic-poset.tar.gz`
-
 Every case runs against **live Claude output** — the command generator makes a real
 Anthropic API call per turn. These are not recorded fixtures.
+
+Two of the fifteen are **regression guards** rather than feature tests, each added after a
+real defect:
+
+- *"a compassionate leave policy question is not treated as a bereavement"* — the
+  `compassionate_leave` flow used to swallow neutral policy questions and open with
+  "I'm sorry for your loss", which is wrong for someone just reading up on entitlements.
+- *"declining the HR follow-up after career advice"* — covers the branch of
+  `career_path_advice` that files nothing.
 
 ### Flow coverage — 86.96% (20 of 23 steps)
 

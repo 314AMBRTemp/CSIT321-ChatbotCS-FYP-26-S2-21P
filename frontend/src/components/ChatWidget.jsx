@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 
+// Suggestion chips are unprompted -- the app puts these words in the employee's mouth
+// before they've said anything. So no bereavement phrasing here: the bot still handles
+// "my cousin passed away" perfectly well when someone genuinely types it, but offering it
+// as a sample prompt reads as tone-deaf.
 const suggestions = [
-  "My cousin passed away, is there leave for this?",
+  "I need to take compassionate leave",
   "How many leave days do I have?",
   "Am I eligible for parental leave?",
   "Cancel my pending leave request",

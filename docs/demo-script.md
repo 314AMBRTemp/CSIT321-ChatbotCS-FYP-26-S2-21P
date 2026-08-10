@@ -41,7 +41,7 @@ Expected explanation:
 Ask:
 
 ```text
-My cousin passed away, is there leave for this?
+I need to take compassionate leave
 ```
 
 Expected explanation:

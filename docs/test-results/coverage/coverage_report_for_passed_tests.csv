@@ -1,7 +1,7 @@
 Flow Name,Coverage,Num Steps,Missing Steps,Line Numbers for Missing Steps
 data\flows.yml::check leave balance,100.0,1,0,[]
 data\flows.yml::apply for leave,100.0,5,0,[]
-data\flows.yml::cancel leave,57.14285714285714,7,3,"[94-95, 91-92, 102-105]"
+data\flows.yml::cancel leave,57.14285714285714,7,3,"[91-92, 94-95, 102-105]"
 data\flows.yml::compassionate leave,100.0,2,0,[]
 data\flows.yml::parental eligibility,100.0,1,0,[]
 data\flows.yml::policy question,100.0,2,0,[]
