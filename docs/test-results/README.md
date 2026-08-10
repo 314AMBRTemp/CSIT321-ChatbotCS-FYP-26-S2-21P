@@ -64,7 +64,10 @@ behind `action_find_pending_leave` finding at least one pending request. It neve
 the employee doesn't exist, so `pending_leave_count` is always 0 and only the zero-pending
 branch is reachable.
 
-Those three paths are covered by suite 2 instead, which is the right place for them.
+Those three paths are covered by suite 2 instead, which is the right place for them — it can
+seed the pending requests each branch needs. Between the two suites all four branches of
+`cancel_leave` are now exercised: zero-pending here, and confirm / decline / multi-pending
+there.
 
 Note also that `career_path_advice` shows 100% while its action bailed at the API-down branch
 before doing any career lookup — a good illustration of what step coverage does and doesn't
@@ -89,7 +92,7 @@ Two of the fifteen exist because of real defects found in this project:
 
 ---
 
-## 2. API checks — 23 / 23
+## 2. API checks — 32 / 32
 
 ```powershell
 backend\.venv\Scripts\python.exe tests\api_checks.py
@@ -105,12 +108,27 @@ the content of the reply. Exits non-zero on failure, so it can gate a commit.
 | Senior parental top-up | Rachel (Head of Sales) and Mei Ling (Lead) get it; Priya (Software Engineer) does not |
 | Career path + handoff | Real certification cited, transfer requirement cited, no-match hands off to HR with department context |
 | Policy vs bereavement | A policy lookup returns policy text and no condolences |
-| **Cancel restores balance** | Submit deducts a day, cancel restores it, no pending left behind — the branch e2e cannot reach |
+| **Cancel restores balance** | Submit deducts a day, cancel restores it, no pending left behind |
+| **Declining keeps the request** | A decline leaves the request Pending and the balance untouched — a decline that silently cancelled would be the worst failure this feature could have |
+| **Multi-pending disambiguation** | With one Annual and one Sick request pending, the bot asks *which*, cancels the Sick one, and leaves the Annual one alone |
 | Support access | Admin 200, non-admin 403, no requester 403 |
 
-The cancel check is **self-seeding and idempotent**: it clears any pending requests left by an
-earlier run, creates exactly one, cancels it through the chat flow, and asserts the balance
-returns to its starting value. Verified by running twice in succession.
+The three cancel checks are **self-seeding and idempotent**: each clears any pending requests
+left by an earlier run, creates exactly what it needs, drives the flow through chat, then
+cleans up. Verified by running twice in succession, with both affected employees ending at
+zero pending.
+
+### Why these three matter disproportionately
+
+They cover the paths e2e structurally cannot reach — and until they were written, the
+multi-pending branch had **never executed once**, in any test or manual check. Every employee
+exercised by hand happened to have exactly one pending request, so `_match_pending()` — the
+function that decides *which* record to cancel — was entirely unrun code. It passed first time,
+but that was not knowable beforehand.
+
+Multi-pending is not an edge case in production: approval lag, block-booking, and this
+company's own carry-over expiry on 31 March (`LEAVE-01`) all produce employees holding several
+pending requests at once.
 
 ---
 

@@ -64,6 +64,30 @@ def leave_state(employee_id):
     return r.json()
 
 
+def clear_pending(employee_id):
+    """Leave the employee with zero pending requests, so a check can seed exactly what it needs."""
+    for req in leave_state(employee_id)["leaveHistory"]:
+        if req["status"] == "Pending":
+            requests.post(f"{BASE}/api/employees/{employee_id}/leave/{req['id']}/cancel", timeout=TIMEOUT)
+
+
+def submit_leave(employee_id, leave_type, days=1):
+    r = requests.post(
+        f"{BASE}/api/askivy/submit-leave",
+        json={"employeeId": employee_id, "type": leave_type, "days": days},
+        timeout=TIMEOUT,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def pending_of(employee_id, leave_type):
+    return [
+        r for r in leave_state(employee_id)["leaveHistory"]
+        if r["status"] == "Pending" and r["type"] == leave_type
+    ]
+
+
 # ── the checks ───────────────────────────────────────────────────────────────
 
 def check_real_data_reaches_the_answer():
@@ -175,6 +199,64 @@ def check_cancel_restores_balance():
     )
 
 
+def check_declining_keeps_the_request():
+    """Declining must leave the request untouched.
+
+    A decline that silently cancelled anyway would be the worst failure this feature could
+    have, and nothing exercised this branch before.
+    """
+    print("\nDeclining a cancellation leaves the request alone")
+    employee_id = "kevin"
+    clear_pending(employee_id)
+    submit_leave(employee_id, "Annual", 1)
+    before = leave_state(employee_id)["facts"]["annualLeaveRemaining"]
+
+    reset(employee_id)
+    ask_rasa(employee_id, "I want to cancel my pending leave request")
+    declined = ask_rasa(employee_id, "/SetSlots(confirm_cancel=false)", display_text="No, keep it")
+
+    state = leave_state(employee_id)
+    still_pending = [r for r in state["leaveHistory"] if r["status"] == "Pending"]
+    check("reply says the request was kept", "kept" in declined["text"].lower(), declined["text"][:120])
+    check("request is STILL pending", len(still_pending) == 1, f"found {len(still_pending)} pending")
+    check(
+        "balance unchanged by the decline",
+        state["facts"]["annualLeaveRemaining"] == before,
+        f"expected {before}, got {state['facts']['annualLeaveRemaining']}",
+    )
+    clear_pending(employee_id)
+
+
+def check_multi_pending_disambiguation():
+    """The branch that had never executed once -- in any test, or by hand.
+
+    _match_pending() matches on leave TYPE first, then on a literal ISO date string, so this
+    seeds one Annual and one Sick request and asks for the sick one by type.
+    """
+    print("\nTwo pending requests: the right one is cancelled")
+    employee_id = "weijian"
+    clear_pending(employee_id)
+    submit_leave(employee_id, "Annual", 1)
+    submit_leave(employee_id, "Sick", 1)
+    check("two pending requests seeded", len(leave_state(employee_id)["leaveHistory"]) >= 2, "")
+
+    reset(employee_id)
+    asked = ask_rasa(employee_id, "I want to cancel a leave request")
+    check(
+        "bot asks which one rather than guessing",
+        "which" in asked["text"].lower(),
+        asked["text"][:140],
+    )
+
+    resolved = ask_rasa(employee_id, "the sick one")
+    check("bot confirms a cancellation", "cancelled" in resolved["text"].lower(), resolved["text"][:140])
+    check("it names the SICK request", "sick" in resolved["text"].lower(), resolved["text"][:140])
+
+    check("sick request is gone from pending", len(pending_of(employee_id, "Sick")) == 0, "")
+    check("annual request is untouched", len(pending_of(employee_id, "Annual")) == 1, "")
+    clear_pending(employee_id)
+
+
 def check_support_access_control():
     print("\nSupport log access")
     ok = requests.get(f"{BASE}/api/admin/chats", params={"requesterId": "nadia", "limit": 1}, timeout=TIMEOUT)
@@ -202,6 +284,8 @@ def main():
         check_career_path_and_handoff,
         check_policy_question_is_not_a_bereavement,
         check_cancel_restores_balance,
+        check_declining_keeps_the_request,
+        check_multi_pending_disambiguation,
         check_support_access_control,
     ):
         try:
