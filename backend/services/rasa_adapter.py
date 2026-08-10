@@ -54,6 +54,10 @@ def _blank_answer(text):
         "suggestedLeave": None,
         "thinkingSteps": [],
         "buttons": [],
+        "canRaiseHrRequest": False,
+        "policyId": None,
+        "policyTopic": None,
+        "situation": None,
     }
 
 
@@ -95,6 +99,12 @@ def _merge_rasa_messages(messages):
         "canSubmitLeave": bool(metadata.get("canSubmitLeave", False)),
         "suggestedLeave": metadata.get("suggestedLeave") or None,
         "thinkingSteps": metadata.get("thinkingSteps") or [],
+        # Same field names the rule-based engine returns, so ChatWidget needs no per-engine
+        # branching -- the widget genuinely cannot tell which engine answered.
+        "canRaiseHrRequest": bool(metadata.get("canRaiseHrRequest", False)),
+        "policyId": metadata.get("policyId") or None,
+        "policyTopic": metadata.get("policyTopic") or None,
+        "situation": metadata.get("situation") or None,
         "buttons": [
             {"title": str(b.get("title", "")), "payload": str(b.get("payload", ""))}
             for b in buttons

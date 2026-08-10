@@ -349,8 +349,12 @@ def check_closer_is_suppressed_after_a_question():
 
     reset("kevin")
     no_question = ask_rasa("kevin", "what is the code of conduct")["text"]
+    # The closer is one of several random variations (see utter_ask_continue_conversation in
+    # domain.yml), so this checks for a closer at all rather than one exact wording -- every
+    # variation both ends with "?" and contains "else".
+    tail = no_question.split("Just to summarise.")[-1]
     check("closer still appears when the reply didn't ask anything",
-          "?" in no_question.split("Just to summarise.")[-1],
+          "?" in tail and "else" in tail.lower(),
           no_question[-160:])
 
 

@@ -100,6 +100,7 @@ def _reply(
     can_submit_leave: bool = False,
     suggested_leave: Optional[Dict[str, Any]] = None,
     thinking_steps: Optional[List[Dict[str, str]]] = None,
+    hr_request: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Send the answer plus the metadata the ChatWidget renders."""
     dispatcher.utter_message(text=text)
@@ -111,6 +112,12 @@ def _reply(
                 "canSubmitLeave": can_submit_leave,
                 "suggestedLeave": suggested_leave,
                 "thinkingSteps": thinking_steps or [],
+                # Drives the "Yes, raise it" card. Sent flat rather than nested so the
+                # widget reads the same field names whichever engine answered.
+                "canRaiseHrRequest": bool((hr_request or {}).get("canRaiseHrRequest")),
+                "policyId": (hr_request or {}).get("policyId"),
+                "policyTopic": (hr_request or {}).get("policyTopic"),
+                "situation": (hr_request or {}).get("situation"),
             }
         }
     )
@@ -565,6 +572,12 @@ class ActionPolicyAnswer(Action):
                 ("Check", f"Resolved the employee's situation as: {answer.get('situation')}"),
                 ("Answer", "Explained the policy, then quoted the rules verbatim"),
             ),
+            hr_request={
+                "canRaiseHrRequest": answer.get("canRaiseHrRequest"),
+                "policyId": answer.get("policyId"),
+                "policyTopic": answer.get("title"),
+                "situation": answer.get("situation"),
+            },
         )
 
         # Suppresses the "anything else?" tail when the answer already ended by asking
