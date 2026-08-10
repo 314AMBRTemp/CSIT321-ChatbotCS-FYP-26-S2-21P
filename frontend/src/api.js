@@ -30,6 +30,13 @@ export const api = {
   profile: (employeeId) => request(`/api/employees/${employeeId}`),
   policies: () => request("/api/policies"),
   chatHistory: (employeeId) => request(`/api/employees/${employeeId}/chat`),
+  // Records something the employee asked AskIvy to take to HR. Fired by the "Yes, raise it"
+  // button, which only appears when the reply actually offered.
+  raiseHrRequest: (payload) => request("/api/hr-requests", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+  adminHrRequests: (requesterId) => request(`/api/admin/hr-requests?requesterId=${encodeURIComponent(requesterId)}`),
   adminChats: (requesterId, { employeeId = "", limit = 200 } = {}) => {
     const params = new URLSearchParams({ requesterId, limit: String(limit) });
     if (employeeId) params.set("employeeId", employeeId);

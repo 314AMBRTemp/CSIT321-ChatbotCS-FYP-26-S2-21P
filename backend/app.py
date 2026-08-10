@@ -5,11 +5,12 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-from models import db, Employee, LeaveRequest, ChatMessage, Policy
+from models import db, Employee, LeaveRequest, ChatMessage, Policy, PolicyExplanation, HRRequest
 from services.policies import active_source, load_policies, search_policies
 from services.policy_repository import load_policies as load_policies_from_file
 from services.career_repository import find_career_path, list_target_departments_from
 from services.askivy_engine import answer_question, employee_facts, default_leave_dates
+from services.policy_answer import build_policy_answer
 from services.rasa_adapter import rasa_bp
 
 load_dotenv()
@@ -34,6 +35,7 @@ def create_app():
         ensure_columns()        # raw SQL only -- must precede any ORM query
         seed_demo_data()
         ensure_admin_accounts()  # ORM -- must follow seeding
+        ensure_managers()        # ORM -- needs every employee row to resolve dept heads
         seed_policies()          # keeps the policies table in step with hr_policies.json
         # Which source actually won, printed at boot. active_source() reports what was asked
         # for; this reports what is being served, so an empty-table fallback is visible in
@@ -142,7 +144,7 @@ def create_app():
         403 below exists so the shape is right and the gap is explicit rather than absent.
         """
         requester_id = str(request.args.get("requesterId", "")).strip()
-        requester = Employee.query.get(requester_id) if requester_id else None
+        requester = db.session.get(Employee, requester_id) if requester_id else None
         if not requester or not requester.is_admin:
             return jsonify({"error": "Support access required."}), 403
 
@@ -182,6 +184,65 @@ def create_app():
         if not query:
             return jsonify({"error": "Query parameter 'q' is required."}), 400
         return jsonify(search_policies(query))
+
+    @app.post("/api/policies/explain")
+    def policies_explain():
+        """A policy answer tailored to one employee. Called by both chat engines.
+
+        Rasa's action server calls this rather than building the answer itself, for the same
+        reason it calls /api/policies/search -- the deployed site runs the rule-based engine,
+        so an answer assembled inside actions.py would never reach the demo.
+        """
+        payload = request.get_json(silent=True) or {}
+        question = str(payload.get("question", "")).strip()
+        if not question:
+            return jsonify({"error": "Field 'question' is required."}), 400
+
+        employee = db.session.get(Employee, payload.get("employeeId") or "")
+        answer = build_policy_answer(employee.to_dict() if employee else None, question)
+        if not answer:
+            return jsonify({"error": "No policy matched."}), 404
+        return jsonify(answer)
+
+    @app.post("/api/hr-requests")
+    def create_hr_request():
+        """Record something the employee asked AskIvy to raise with HR.
+
+        The manager is copied from the employee record at creation time rather than looked up
+        when the request is read, so the row still shows who was actually copied even if the
+        employee changes department later.
+        """
+        payload = request.get_json(silent=True) or {}
+        employee = db.session.get(Employee, payload.get("employeeId") or "")
+        if not employee:
+            return jsonify({"error": "Unknown employee."}), 404
+
+        question = str(payload.get("question", "")).strip()
+        if not question:
+            return jsonify({"error": "Field 'question' is required."}), 400
+
+        hr_request = HRRequest(
+            employee_id=employee.id,
+            topic=str(payload.get("topic") or "General HR question")[:160],
+            policy_id=payload.get("policyId"),
+            question=question,
+            situation=payload.get("situation"),
+            manager_email=employee.manager_email,
+        )
+        db.session.add(hr_request)
+        db.session.commit()
+        return jsonify(hr_request.to_dict()), 201
+
+    @app.get("/api/admin/hr-requests")
+    def admin_hr_requests():
+        """Every raised request, for the support view. Same admin gate as the chat log."""
+        requester_id = request.args.get("requesterId")
+        requester = db.session.get(Employee, requester_id) if requester_id else None
+        if not requester or not requester.is_admin:
+            return jsonify({"error": "Admin access required."}), 403
+
+        rows = HRRequest.query.order_by(HRRequest.created_at.desc()).all()
+        return jsonify([row.to_dict() for row in rows])
 
     @app.get("/api/careers/search")
     def careers_search():
@@ -333,6 +394,16 @@ def ensure_columns():
         ))
         db.session.commit()
 
+    for column, ddl in (
+        ("manager_name", "ALTER TABLE employees ADD COLUMN manager_name VARCHAR(120)"),
+        ("manager_email", "ALTER TABLE employees ADD COLUMN manager_email VARCHAR(160)"),
+    ):
+        if column not in columns:
+            # Nullable with no default, so this is valid on both dialects and needs no
+            # backfill statement -- ensure_managers() populates it afterwards via the ORM.
+            db.session.execute(db.text(ddl))
+            db.session.commit()
+
     if "policies" in inspector.get_table_names():
         policy_columns = {c["name"] for c in inspector.get_columns("policies")}
         if "sort_order" not in policy_columns:
@@ -348,7 +419,7 @@ def ensure_admin_accounts():
     Runs AFTER seed_demo_data(), because seeding bails out the moment any employee exists
     and this function creates one.
     """
-    if Employee.query.first() and not Employee.query.get(SUPPORT_ACCOUNT_ID):
+    if Employee.query.first() and not db.session.get(Employee, SUPPORT_ACCOUNT_ID):
         db.session.add(support_account())
         db.session.commit()
 
@@ -356,6 +427,44 @@ def ensure_admin_accounts():
         should_be_admin = employee.id in ADMIN_EMPLOYEE_IDS
         if employee.is_admin != should_be_admin:
             employee.is_admin = should_be_admin
+    db.session.commit()
+
+
+# Department heads, used to fill in each employee's manager. Picked as the longest-serving
+# person in each department so the demo data stays internally consistent.
+DEPARTMENT_MANAGERS = {
+    "Engineering": "david",
+    "Product": "ethan",
+    "Design": "meiling",
+    "Operations": "weijian",
+    "Sales": "rachel",
+    "Human Resources": "nadia",
+}
+
+
+def ensure_managers():
+    """Fill in manager_name / manager_email from DEPARTMENT_MANAGERS.
+
+    Runs after seeding, like ensure_admin_accounts(), because it reads employee rows.
+
+    A department head gets no manager rather than being made their own -- the offer to "cc
+    your manager" then correctly degrades to an HR-only handoff instead of copying someone
+    to their own request.
+    """
+    employees = {employee.id: employee for employee in Employee.query.all()}
+
+    for employee in employees.values():
+        manager_id = DEPARTMENT_MANAGERS.get(employee.department)
+        manager = employees.get(manager_id) if manager_id else None
+
+        if not manager or manager.id == employee.id:
+            employee.manager_name = None
+            employee.manager_email = None
+            continue
+
+        employee.manager_name = manager.name
+        employee.manager_email = f"{manager.id}@lumenvale.com"
+
     db.session.commit()
 
 

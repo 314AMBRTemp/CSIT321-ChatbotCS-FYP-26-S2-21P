@@ -359,6 +359,11 @@ is built from live HRMS data.
   rewrites `postgres://` → `postgresql://`) and `FRONTEND_ORIGIN`.
   No `POLICY_SOURCE` needed — it defaults to `database`, and the table is seeded from
   `hr_policies.json` at boot. Set `POLICY_SOURCE=json` only to roll back (see below).
+  **Also set `ANTHROPIC_API_KEY` on the backend service** — the same key `rasa/.env` uses.
+  It generates the opening paragraph of a policy answer. Without it nothing breaks: answers
+  fall back to the tailored line plus the verbatim rules, just with no conversational
+  opener. That is the difference between the deployed demo reading well and reading like a
+  policy dump, so it is worth setting.
 - **Static site:** root `frontend`, build `npm install && npm run build`,
   publish `dist`, env `VITE_API_URL`.
 - Free Postgres expires ~30 days after creation (14-day grace) — create it near the
@@ -386,6 +391,8 @@ is built from live HRMS data.
 | Edited `domain.yml` or `flows.yml` but nothing changed | `rasa run` loads the domain baked into the trained model, not live from disk. Re-run `rasa train` first. |
 | Edited `actions.py` but the bot's replies are unchanged | `rasa run actions` loads `actions.py` once at boot and has **no auto-reload**. Restart the action server. Watch the asymmetry: Flask's debug reloader *does* pick up `app.py` / `askivy_engine.py` on save, so it is easy to assume Rasa does the same. Symptom to recognise: the REST API returns your new values but the chatbot still gives the old answer. |
 | Edited `hr_policies.json` / `career_paths.json` but answers are stale | Restart Flask. `load_career_paths()` is `@lru_cache(maxsize=1)`, so the file is read once per process; policies now come from the database, and `seed_policies()` re-syncs the table from the file **at boot only**. |
+| Policy answers are correct but read like a raw policy dump, with no opening paragraph | `ANTHROPIC_API_KEY` is not set for the **Flask** process (it is separate from `rasa/.env`). The generated layer is skipped and the answer degrades to the tailored line plus the verbatim rules. Check the boot log for the policy source line and set the key in `backend/.env`. |
+| A python script against the API is slow — roughly 2 seconds per request, regardless of endpoint | The URL says `localhost`. On Windows that resolves to `::1` first and the Flask dev server only listens on IPv4, so every request waits out a connect timeout before falling back. Use `127.0.0.1`. `tests/api_checks.py` already does; this bit it for months and only ever looked like "the checks are slow". |
 | Policy answers look wrong and you suspect the database | Set `POLICY_SOURCE=json` and restart — that reverts retrieval to reading `hr_policies.json` directly, with no redeploy or code change. The boot log line `[askivy] policy source requested=… serving=N policies` says which source is live. Confirm the two agree with `backend\.venv\Scripts\python.exe tests\policy_parity.py`. |
 | Config rejected on train | Installed Rasa differs from the assumed 3.18 layout. Run `rasa init --template calm` in a scratch dir and reconcile `config.yml` / `endpoints.yml` / `domain.yml`. `flows.yml` and `actions.py` are the portable parts. |
 

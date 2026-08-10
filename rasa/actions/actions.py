@@ -539,30 +539,37 @@ class ActionPolicyAnswer(Action):
         topic = (tracker.get_slot("policy_topic") or "").strip()
         query = topic or (tracker.latest_message or {}).get("text", "")
 
-        matches = _get("/api/policies/search", q=query)
-        if not matches:
+        # The answer is assembled by the backend, not here. Both chat engines have to give
+        # the same reply, and the deployed site runs the rule-based one because Rasa is too
+        # heavy for a free Render service -- anything built into this file alone would never
+        # appear in the demo. Same reasoning that put policy search behind the API.
+        answer = _post(
+            "/api/policies/explain",
+            {"employeeId": _employee_id(tracker), "question": query},
+        )
+
+        if not answer:
             _reply(
                 dispatcher,
                 "I couldn't reach the policy library just now. Please try again shortly.",
             )
             return []
 
-        top = matches[0]
-        rules = "\n".join(f"- {rule}" for rule in top.get("rules", [])[:4])
-        titles = " | ".join(policy["title"] for policy in matches[:2])
-
         _reply(
             dispatcher,
-            f"Here's what the {top['title']} policy says:\n\n{rules}",
-            source=titles,
+            answer["text"],
+            source=answer.get("source"),
             thinking_steps=_steps(
                 ("Understand", f"Topic identified as: {query or 'general HR policy'}"),
-                ("Retrieve", f"Best match: {top['id']} {top['title']}"),
-                ("Ground", "Quoted the policy rules rather than paraphrasing"),
-                ("Answer", "Returned the rules with the policy cited"),
+                ("Retrieve", f"Best match: {answer['policyId']} {answer['title']}"),
+                ("Check", f"Resolved the employee's situation as: {answer.get('situation')}"),
+                ("Answer", "Explained the policy, then quoted the rules verbatim"),
             ),
         )
-        return []
+
+        # Suppresses the "anything else?" tail when the answer already ended by asking
+        # something. See utter_ask_continue_conversation in domain.yml.
+        return [SlotSet("reply_ends_with_question", bool(answer.get("endsWithQuestion")))]
 
 
 # ── 6. Career path advice ────────────────────────────────────────────────────

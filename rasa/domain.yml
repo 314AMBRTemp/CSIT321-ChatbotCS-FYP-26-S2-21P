@@ -4,6 +4,16 @@ version: "3.1"
 # regex/entity extraction. That is the CALM model: Claude decides what the user
 # meant and emits SetSlot commands; Rasa validates and stores them.
 slots:
+  # Set by an action when the reply it just sent ended by asking the employee something.
+  # pattern_completed reads it to skip the "anything else?" tail, so the employee is not
+  # asked two unrelated questions in a row. `controlled` because only actions write it --
+  # the LLM must never fill this from what the user said.
+  reply_ends_with_question:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: controlled
+
   leave_type:
     type: text
     mappings:
@@ -153,14 +163,25 @@ responses:
   # This is the one that actually fires after every completed flow -- it is the
   # "Is there anything else I can help you with?" tail. Rephrasing it was the extra
   # LLM round trip on the app's most common interaction.
+  # Rasa picks one of these at random each time. Variations rather than a rephrasing call:
+  # same effect on the repetitiveness, none of the latency, and no chance of the model
+  # wandering off-message on the app's most frequent line.
   utter_ask_continue_conversation:
     - text: "Anything else I can help with?"
+    - text: "Anything else on your mind?"
+    - text: "Let me know if there's anything else."
+    - text: "Anything else you need?"
+    - text: "Happy to keep going if you've got more."
 
   utter_can_do_something_else:
-    - text: "Anything else I can help with?"
+    - text: "Sure -- what else can I help with?"
+    - text: "Of course, what else do you need?"
+    - text: "Go ahead, what else is on your mind?"
 
   utter_closing_words:
     - text: "I'll be here if anything else comes up."
+    - text: "No problem -- I'm here whenever you need me."
+    - text: "Alright, give me a shout if anything comes up."
 
   # Overrides CALM's built-in chitchat response, which ships as the literal text
   # "placeholder". The text below is the fallback used if the rephrasing call fails;

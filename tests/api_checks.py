@@ -21,10 +21,16 @@ Exits non-zero if any check fails, so it can gate a commit.
 
 import os
 import sys
+import time
 
 import requests
 
-BASE = os.getenv("ASKIVY_API_URL", "http://localhost:5000").rstrip("/")
+# 127.0.0.1, deliberately not "localhost". On Windows, localhost resolves to ::1 first and
+# the Flask dev server only listens on IPv4, so every single request paid a ~2 second
+# connect timeout before falling back -- roughly two minutes across this suite, and enough
+# to make any timing assertion meaningless. Nothing to do with the app; it only ever showed
+# up as "the checks are slow".
+BASE = os.getenv("ASKIVY_API_URL", "http://127.0.0.1:5000").rstrip("/")
 TIMEOUT = float(os.getenv("ASKIVY_CHECK_TIMEOUT", "90"))
 
 _results = []
@@ -269,6 +275,125 @@ def check_support_access_control():
     check("no requester is refused", anon.status_code == 403, f"HTTP {anon.status_code}")
 
 
+def explain(employee_id, question):
+    r = requests.post(
+        f"{BASE}/api/policies/explain",
+        json={"employeeId": employee_id, "question": question},
+        timeout=TIMEOUT,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def check_tailored_policy_answers():
+    """The whole point of the tailored layer: two employees, one question, different answers.
+
+    If this ever fails with both answers identical, the eligibility line has stopped being
+    computed and the answer has quietly gone back to being a generic policy dump.
+    """
+    print("\nPolicy answers are tailored to the employee")
+
+    marcus = explain("marcus", "Can I work from home?")      # probation
+    sarah = explain("sarah", "Can I work from home?")        # returning from parental leave
+
+    check("same question, different situations resolved",
+          marcus["situation"] == "probation" and sarah["situation"] == "parental_return",
+          f"marcus={marcus['situation']} sarah={sarah['situation']}")
+    check("probation answer states the 4-day on-site rule",
+          "4 days" in marcus["text"], marcus["text"][:160])
+    check("parental answer offers the fully-remote arrangement",
+          "fully-remote" in sarah["text"] or "fully remote" in sarah["text"], sarah["text"][:160])
+    check("the two answers actually differ", marcus["text"] != sarah["text"], "")
+
+    # Layer 3 is the receipt that makes layer 1 safe to generate. Its absence would mean a
+    # generated paragraph is being shown with nothing to check it against.
+    for name, answer in (("marcus", marcus), ("sarah", sarah)):
+        check(f"{name}: verbatim rules are still quoted",
+              "Just to summarise." in answer["text"]
+              and "Employees may work remotely up to 3 days per week with manager approval." in answer["text"],
+              answer["text"][-200:])
+
+
+def check_no_offer_without_a_conditional_clause():
+    """Policies whose rules don't depend on the employee must say nothing about them."""
+    print("\nNo invented personalisation on unconditional policies")
+    answer = explain("sarah", "what is the code of conduct")
+    check("conduct policy resolves to standard", answer["situation"] == "standard", answer["situation"])
+    check("no HR offer is made", answer["canRaiseHrRequest"] is False, "")
+    check("no trailing question", answer["endsWithQuestion"] is False, "")
+    check("still returns the real rules", "integrity" in answer["text"], answer["text"][:120])
+
+
+def check_explanation_cache():
+    """Second identical request must come from the cache, not a second generation."""
+    print("\nGenerated prose is cached")
+    first = explain("priya", "hybrid working rules")
+    start = time.monotonic()
+    second = explain("priya", "hybrid working rules")
+    elapsed = time.monotonic() - start
+
+    check("cached answer is byte-identical", first["text"] == second["text"], "")
+    # A generation round trip is >1s; a cache hit is milliseconds. Generous bound so this
+    # doesn't turn into a flaky timing test.
+    check("cached answer returns fast", elapsed < 0.75, f"took {elapsed:.2f}s")
+
+
+def check_closer_is_suppressed_after_a_question():
+    """A reply that ends by asking something must not be followed by a second question."""
+    print("\nClosing line respects the reply")
+    reset("marcus")
+    ends_with_question = ask_rasa("marcus", "Can I work from home?")["text"]
+    check("no 'anything else' after the bot asked something",
+          "Anything else" not in ends_with_question and "anything else" not in ends_with_question,
+          ends_with_question[-160:])
+
+    reset("kevin")
+    no_question = ask_rasa("kevin", "what is the code of conduct")["text"]
+    check("closer still appears when the reply didn't ask anything",
+          "?" in no_question.split("Just to summarise.")[-1],
+          no_question[-160:])
+
+
+def check_hr_requests():
+    print("\nRaising a request with HR")
+    before = requests.get(
+        f"{BASE}/api/admin/hr-requests", params={"requesterId": "nadia"}, timeout=TIMEOUT
+    ).json()
+
+    created = requests.post(
+        f"{BASE}/api/hr-requests",
+        json={
+            "employeeId": "marcus",
+            "topic": "Work From Home / Hybrid",
+            "policyId": "WFH-01",
+            "question": "Can I work from home?",
+            "situation": "probation",
+        },
+        timeout=TIMEOUT,
+    )
+    check("request is created", created.status_code == 201, f"HTTP {created.status_code}")
+    row = created.json()
+    check("manager is copied from the employee record",
+          row["managerEmail"] == "ethan@lumenvale.com", row.get("managerEmail"))
+    check("opens in the Open state", row["status"] == "Open", row.get("status"))
+
+    after = requests.get(
+        f"{BASE}/api/admin/hr-requests", params={"requesterId": "nadia"}, timeout=TIMEOUT
+    ).json()
+    check("it shows up in the support view", len(after) == len(before) + 1,
+          f"{len(before)} -> {len(after)}")
+
+    denied = requests.get(
+        f"{BASE}/api/admin/hr-requests", params={"requesterId": "marcus"}, timeout=TIMEOUT
+    )
+    check("non-admin cannot read HR requests", denied.status_code == 403, f"HTTP {denied.status_code}")
+
+    unknown = requests.post(
+        f"{BASE}/api/hr-requests", json={"employeeId": "nobody", "question": "hi"}, timeout=TIMEOUT
+    )
+    check("unknown employee is rejected", unknown.status_code == 404, f"HTTP {unknown.status_code}")
+
+
 def main():
     print(f"AskIvy API checks against {BASE}")
     try:
@@ -283,6 +408,11 @@ def main():
         check_senior_parental_top_up,
         check_career_path_and_handoff,
         check_policy_question_is_not_a_bereavement,
+        check_tailored_policy_answers,
+        check_no_offer_without_a_conditional_clause,
+        check_explanation_cache,
+        check_closer_is_suppressed_after_a_question,
+        check_hr_requests,
         check_cancel_restores_balance,
         check_declining_keeps_the_request,
         check_multi_pending_disambiguation,

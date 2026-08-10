@@ -2,6 +2,7 @@ import os
 import re
 from datetime import date, timedelta
 from services.policies import search_policies
+from services.policy_answer import build_policy_answer
 
 IMMEDIATE_FAMILY = {
     "spouse", "husband", "wife", "partner", "parent", "father", "mother", "mum", "mom", "dad",
@@ -116,6 +117,32 @@ def _leave_details(question):
     days = int(days_match.group(1)) if days_match else (relation["suggestedDays"] if leave_type == "compassionate" else 1)
     return leave_type.capitalize(), days, relation
 
+def _policy_reply(employee, question, policies):
+    """A three-layer policy answer in this engine's response shape, or None.
+
+    Returns None when no policy matched, so each caller keeps whatever fallback it already
+    had rather than this inventing one.
+    """
+    answer = build_policy_answer(employee.to_dict(), question)
+    if not answer:
+        return None
+
+    return {
+        "text": answer["text"],
+        "source": answer["source"],
+        "isRecommendation": False,
+        "canSubmitLeave": False,
+        # Drives the "Yes, raise it" button in the widget.
+        "canRaiseHrRequest": answer["canRaiseHrRequest"],
+        "policyId": answer["policyId"],
+        "policyTopic": answer["title"],
+        "situation": answer["situation"],
+        # The offer is itself a question, so the widget must not tack another one on.
+        "endsWithQuestion": answer["endsWithQuestion"],
+        "thinkingSteps": _thinking_steps(question, policies),
+    }
+
+
 def answer_question(employee, question):
     policies = search_policies(question)
     facts = employee_facts(employee)
@@ -214,23 +241,21 @@ def answer_question(employee, question):
         text = f"Yes, your profile meets the 12-month continuous service requirement for parental leave.{extra}" if facts["eligibleForParental"] else "Based on your profile, you are not yet eligible because parental leave requires at least 12 months of continuous service." + _hr_handoff(f"you're asking about parental leave with {employee.tenure_years} year(s) of service")
         return {"text": text, "source": "Parental Leave", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
 
-    if any(token in q for token in ["work from home", "wfh", "remote", "hybrid", "home full-time", "full time"]):
-        answer = "Lumen & Vale uses a hybrid model where employees may work remotely up to 3 days per week with manager approval."
-        if employee.probation:
-            answer += " Since you are still in probation, the policy expects you to be on-site at least 4 days per week."
-        if any(token in (q + " " + (employee.recent_event or "")).lower() for token in ["parental", "birth", "baby", "return"]):
-            answer += " Employees in any department returning from parental leave may request a temporary fully remote arrangement for up to 3 months."
-        return {"text": answer, "source": "Work From Home / Hybrid", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
-
-    if any(token in q for token in ["notice", "resign", "resignation", "quit"]):
-        return {"text": f"Your notice period is {facts['notice']}. The policy sets 1 week for probation, 4 weeks for confirmed Bands 1 to 3, and 8 weeks for confirmed Bands 4 and above.", "source": "Resignation & Notice", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
-
-    if "bonus" in q:
-        text = "You are marked as eligible in this demo because you are confirmed and not in probation. Final bonus payout is still discretionary and depends on performance rating, salary band, and employment status on the March payment date." if facts["bonusEligible"] else "You are not marked as eligible in this demo because the policy requires employees to be confirmed, past probation, and still employed on the payment date."
-        return {"text": text, "source": "Performance Bonus", "isRecommendation": False, "canSubmitLeave": False, "thinkingSteps": _thinking_steps(question, policies)}
+    # Everything above this line is an ACTION or a live-data lookup -- submitting leave,
+    # quoting a balance, offering a career path. Everything that reaches here is a policy
+    # question, and they all get the same three-layer answer.
+    #
+    # This replaced three hand-written branches (work-from-home, notice period, bonus) that
+    # duplicated the policy text in Python and had to be edited whenever a rule changed. The
+    # WFH one had reimplemented the probation and parental clauses by hand. The wording now
+    # comes from the policy itself and the eligibility line from policy_situation, so there
+    # is one place to change and no chance of the two drifting apart.
+    reply = _policy_reply(employee, question, policies)
+    if reply:
+        return reply
 
     return {
-        "text": f"I found the closest matching policy area: {_source(policies)}. Try asking AskIvy about compassionate leave, annual leave, sick leave, parental leave, work from home, notice period, bonus, expenses, or conduct.",
+        "text": "I couldn't find a policy covering that. Try asking AskIvy about compassionate leave, annual leave, sick leave, parental leave, work from home, notice period, bonus, expenses, or conduct.",
         "source": _source(policies),
         "isRecommendation": False,
         "canSubmitLeave": False,

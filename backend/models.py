@@ -29,9 +29,15 @@ class Employee(db.Model):
     # app, so this identifies a role, it does not authenticate one. See ensure_schema()
     # in app.py for how existing databases pick the column up.
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
+    # Who gets copied when AskIvy raises something with HR on this employee's behalf. Both
+    # nullable: a department head has no manager in this data set, and the bot must then
+    # offer an HR-only handoff rather than naming someone who doesn't exist.
+    manager_name = db.Column(db.String(120), nullable=True)
+    manager_email = db.Column(db.String(160), nullable=True)
 
     leave_requests = db.relationship("LeaveRequest", back_populates="employee", cascade="all, delete-orphan")
     chat_messages = db.relationship("ChatMessage", back_populates="employee", cascade="all, delete-orphan")
+    hr_requests = db.relationship("HRRequest", back_populates="employee", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -49,6 +55,8 @@ class Employee(db.Model):
             "probation": self.probation,
             "salaryBand": self.salary_band,
             "isAdmin": self.is_admin,
+            "managerName": self.manager_name,
+            "managerEmail": self.manager_email,
         }
 
 class LeaveRequest(db.Model):
@@ -118,6 +126,72 @@ class Policy(db.Model):
             "category": self.category,
             "summary": self.summary,
             "rules": rules,
+        }
+
+
+class PolicyExplanation(db.Model):
+    """Cache of generated policy prose, keyed by policy and situation.
+
+    The generated layer of a policy answer depends only on the policy's rules and which
+    situation applies -- never on who is asking. So every employee in probation asking about
+    hybrid working can share one generated paragraph, and the space is (10 policies x a few
+    situations), which converges after a handful of questions.
+
+    WHAT MUST NEVER BE CACHED: the tailored line. It carries live figures -- LEAVE-01 quotes
+    the employee's remaining balance -- so it is recomputed on every request and appended
+    after the cached prose. Caching it would show one employee another's leave balance.
+
+    policy_updated_at is the invalidation key. It holds the Policy.updated_at the prose was
+    generated from; when a policy is edited in the admin editor its timestamp moves and the
+    stale entry is ignored. Without this, editing a policy would leave the old explanation in
+    front of users indefinitely while the verbatim rules underneath it changed.
+    """
+
+    __tablename__ = "policy_explanations"
+
+    policy_id = db.Column(db.String(32), db.ForeignKey("policies.id"), primary_key=True)
+    situation_key = db.Column(db.String(48), primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    policy_updated_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+
+class HRRequest(db.Model):
+    """Something the employee asked AskIvy to raise with HR.
+
+    Exists because the bot now offers to raise things. An offer that leads nowhere is worse
+    than no offer, so accepting one writes a row that support can actually see in the admin
+    view -- the same reasoning that put chat history there.
+    """
+
+    __tablename__ = "hr_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.String(32), db.ForeignKey("employees.id"), nullable=False)
+    topic = db.Column(db.String(160), nullable=False)          # human-readable, e.g. "Work From Home / Hybrid"
+    policy_id = db.Column(db.String(32), nullable=True)        # not a FK: the policy may be deleted later
+    question = db.Column(db.Text, nullable=False)              # what the employee actually asked
+    situation = db.Column(db.String(48), nullable=True)        # resolved situation, so HR sees what the bot concluded
+    # Copied at creation, not looked up later: if the employee changes manager afterwards,
+    # the record should still show who was actually copied at the time.
+    manager_email = db.Column(db.String(160), nullable=True)
+    status = db.Column(db.String(30), nullable=False, default="Open")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    employee = db.relationship("Employee", back_populates="hr_requests")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "employeeId": self.employee_id,
+            "employeeName": self.employee.name if self.employee else None,
+            "topic": self.topic,
+            "policyId": self.policy_id,
+            "question": self.question,
+            "situation": self.situation,
+            "managerEmail": self.manager_email,
+            "status": self.status,
+            "createdAt": self.created_at.isoformat(),
         }
 
 

@@ -16,7 +16,7 @@ changes at runtime; these rows are about to become editable, and a cache would s
 policies straight after an edit.
 """
 
-from models import Policy
+from models import Policy, db
 from services.policy_search import score_policies
 
 
@@ -36,7 +36,9 @@ def load_policies():
 
 
 def get_policy_by_id(policy_id):
-    policy = Policy.query.get(policy_id)
+    # db.session.get, not Policy.query.get -- the latter is legacy in SQLAlchemy 2.0 and
+    # emits a LegacyAPIWarning on every lookup.
+    policy = db.session.get(Policy, policy_id)
     return policy.to_dict() if policy else None
 
 

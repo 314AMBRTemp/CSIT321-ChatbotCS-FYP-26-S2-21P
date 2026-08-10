@@ -65,7 +65,9 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
       const answer = await api.askIvy(employee.id, question, displayText);
       setMessages((prev) => [
         ...prev.filter((m) => m.role !== "thinking"),
-        { role: "assistant", ...answer },
+        // `question` rides along so that if this reply offers to raise something with HR,
+        // the request records what was actually asked rather than the bot's own wording.
+        { role: "assistant", question, ...answer },
       ]);
     } catch (err) {
       setMessages((prev) => [
@@ -74,6 +76,30 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
       ]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Accepting the bot's offer to take something to HR. The row it writes is what the
+  // Support tab shows, so an offer the employee accepted always leaves a trace someone can
+  // act on -- an offer that led nowhere would be worse than not offering at all.
+  async function raiseHrRequest(message, index) {
+    try {
+      await api.raiseHrRequest({
+        employeeId: employee.id,
+        topic: message.policyTopic,
+        policyId: message.policyId,
+        question: message.question,
+        situation: message.situation,
+      });
+      // Mark this specific reply as actioned so the card can't be clicked twice.
+      setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, hrRequestRaised: true } : m)));
+      showToast(
+        employee.managerName
+          ? `Raised with HR, copying ${employee.managerName}.`
+          : "Raised with HR.",
+      );
+    } catch (err) {
+      showToast(err.message || "Couldn't raise that with HR.");
     }
   }
 
@@ -131,6 +157,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
               message={message}
               employee={employee}
               onSubmitLeave={submitLeave}
+              onRaiseHr={() => raiseHrRequest(message, index)}
               onButton={ask}
               isLast={index === messages.length - 1}
               loading={loading}
@@ -154,7 +181,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
   );
 }
 
-function Message({ message, employee, onSubmitLeave, onButton, isLast, loading }) {
+function Message({ message, employee, onSubmitLeave, onRaiseHr, onButton, isLast, loading }) {
   if (message.role === "user") {
     return <div className="cb-user"><div className="cb-user-bubble">{message.text}</div></div>;
   }
@@ -190,6 +217,26 @@ function Message({ message, employee, onSubmitLeave, onButton, isLast, loading }
               </button>
             ))}
           </div>
+        ) : null}
+        {/* The reply ended by offering to take this to HR, so give them a way to say yes.
+            Only on the newest reply, like the other buttons -- and it disappears once
+            actioned rather than silently writing a second row. */}
+        {isLast && message.canRaiseHrRequest ? (
+          message.hrRequestRaised ? (
+            <div className="cb-action-card">
+              <strong>Raised with HR</strong><br />
+              {employee.managerEmail
+                ? `${employee.managerName} has been copied.`
+                : "HR will follow up with you."}
+            </div>
+          ) : (
+            <div className="cb-action-card">
+              <strong>Raise this with HR</strong><br />
+              {message.policyTopic}
+              {employee.managerName ? ` · copying ${employee.managerName}` : ""}<br />
+              <button className="cb-action-btn" disabled={loading} onClick={onRaiseHr}>Yes, raise it</button>
+            </div>
+          )
         ) : null}
         {message.canSubmitLeave && message.suggestedLeave ? (
           <div className="cb-action-card">

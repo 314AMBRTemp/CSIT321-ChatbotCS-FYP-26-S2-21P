@@ -213,7 +213,7 @@ function HistoryPage({ messages }) {
   );
 }
 
-function AdminPage({ data, users, filter, onFilterChange }) {
+function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
   return (
     <main className="page">
       <h1 className="page-title">Support — conversation log</h1>
@@ -225,8 +225,36 @@ function AdminPage({ data, users, filter, onFilterChange }) {
       <div className="stats">
         <div className="stat-card"><div className="stat-label">Total messages</div><div className="stat-value v-violet">{data?.total ?? 0}</div></div>
         <div className="stat-card"><div className="stat-label">Showing</div><div className="stat-value v-teal">{data?.returned ?? 0}</div></div>
-        <div className="stat-card"><div className="stat-label">Employees</div><div className="stat-value v-amber">{users.length}</div></div>
+        <div className="stat-card"><div className="stat-label">Open HR requests</div><div className="stat-value v-amber">{hrRequests?.filter((r) => r.status === "Open").length ?? 0}</div></div>
       </div>
+
+      {/* Sits above the transcript on purpose: these are the conversations where the
+          employee actually asked for a human, so they are the ones needing action rather
+          than review. */}
+      <div className="section-title">Raised with HR</div>
+      {hrRequests?.length ? (
+        <div className="table-card">
+          <table>
+            <thead>
+              <tr><th>Raised</th><th>Employee</th><th>Topic</th><th>What they asked</th><th>Manager copied</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {hrRequests.map((row) => (
+                <tr key={row.id}>
+                  <td>{new Date(row.createdAt).toLocaleString()}</td>
+                  <td>{row.employeeName || row.employeeId}</td>
+                  <td>{row.topic}</td>
+                  <td>{row.question}</td>
+                  <td>{row.managerEmail || "—"}</td>
+                  <td><span className={`status-pill s-${row.status.toLowerCase()}`}>{row.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="hint-box">No one has asked AskIvy to raise anything with HR yet.</div>
+      )}
 
       <div className="form-card">
         <div className="form-group">
@@ -314,6 +342,7 @@ function App() {
   const [historyData, setHistoryData] = useState(null);
   const [adminData, setAdminData] = useState(null);
   const [adminFilter, setAdminFilter] = useState("");
+  const [hrRequests, setHrRequests] = useState([]);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -346,6 +375,11 @@ function App() {
     api.adminChats(currentUser.id, { employeeId: adminFilter })
       .then(setAdminData)
       .catch((err) => showToast(err.message));
+    // Not filtered by employee: there are far fewer of these than chat messages, and a
+    // support user opening this tab wants to see everything outstanding.
+    api.adminHrRequests(currentUser.id)
+      .then(setHrRequests)
+      .catch(() => setHrRequests([]));
   }, [currentUser?.id, currentUser?.isAdmin, activePage, adminFilter]);
 
   function showToast(message) {
@@ -424,7 +458,7 @@ function App() {
       {activePage === "profile" && profileData ? <ProfilePage data={profileData} /> : null}
       {activePage === "policies" ? <PoliciesPage policies={policies} /> : null}
       {activePage === "admin" && currentUser.isAdmin ? (
-        <AdminPage data={adminData} users={users} filter={adminFilter} onFilterChange={setAdminFilter} />
+        <AdminPage data={adminData} users={users} filter={adminFilter} onFilterChange={setAdminFilter} hrRequests={hrRequests} />
       ) : null}
 
       <ChatWidget employee={currentUser} onLeaveSubmitted={refreshAll} showToast={showToast} />

@@ -17,6 +17,42 @@ flows:
     steps:
       - action: action_free_chitchat
 
+  # ── Override of a CALM default pattern ─────────────────────────────────────
+  # pattern_completed runs after every finished flow and is what produces the
+  # "Anything else I can help with?" tail. It is a `collect` step, so the prompt is
+  # utter_ask_continue_conversation by Rasa's utter_ask_<slot> convention -- which is
+  # why grepping the default patterns for that response name finds only its definition.
+  #
+  # The guard below is the only change from Rasa's version: when the reply just ended by
+  # asking the employee something ("Want me to raise a request with HR?"), following it
+  # with a second unrelated question reads badly and buries the first one. The action
+  # that produced the reply sets reply_ends_with_question, and this skips the tail.
+  # Everything else -- the collect, the branches, the CSAT link -- is reproduced exactly
+  # as Rasa ships it, so no default behaviour is lost.
+  pattern_completed:
+    description: Flow that asks if the user needs more help after completing their initiated use cases
+    name: pattern completed
+    steps:
+      - noop: true
+        next:
+          - if: slots.reply_ends_with_question
+            then: END
+          - else: ask_continue
+      - id: ask_continue
+        collect: continue_conversation
+        description: Set this slot to `True` if the user needs further help and wants to continue the conversation. Set it to `False` otherwise.
+        ask_before_filling: true
+        next:
+          - if: slots.continue_conversation
+            then:
+            - action: utter_can_do_something_else
+              next: END
+          - else:
+            - action: utter_closing_words
+              next: link_csat
+            - id: link_csat
+              link: pattern_customer_satisfaction
+
   # ── 1. Leave balance ───────────────────────────────────────────────────────
   check_leave_balance:
     description: >
