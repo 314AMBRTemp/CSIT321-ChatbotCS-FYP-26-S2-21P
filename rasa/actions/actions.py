@@ -101,8 +101,15 @@ def _reply(
     suggested_leave: Optional[Dict[str, Any]] = None,
     thinking_steps: Optional[List[Dict[str, str]]] = None,
     hr_request: Optional[Dict[str, Any]] = None,
+    unanswered: bool = False,
 ) -> None:
-    """Send the answer plus the metadata the ChatWidget renders."""
+    """Send the answer plus the metadata the ChatWidget renders.
+
+    unanswered marks a genuine "couldn't answer" moment -- HRMS/career-library
+    unreachable, no career path on file for the requested pair. NOT a fuzzy policy match
+    or a chitchat deflection; both are complete, honest answers, not gaps. Defaults False
+    so every existing call site keeps its current behaviour unless it opts in.
+    """
     dispatcher.utter_message(text=text)
     dispatcher.utter_message(
         json_message={
@@ -118,6 +125,7 @@ def _reply(
                 "policyId": (hr_request or {}).get("policyId"),
                 "policyTopic": (hr_request or {}).get("policyTopic"),
                 "situation": (hr_request or {}).get("situation"),
+                "unanswered": bool(unanswered),
             }
         }
     )
@@ -272,7 +280,7 @@ class ActionGetLeaveBalance(Action):
     def run(self, dispatcher, tracker, domain):
         data = _get(f"/api/employees/{_employee_id(tracker)}")
         if not data:
-            _reply(dispatcher, API_DOWN_MESSAGE)
+            _reply(dispatcher, API_DOWN_MESSAGE, unanswered=True)
             return []
 
         employee = data["employee"]
@@ -348,7 +356,7 @@ class ActionFindPendingLeave(Action):
     def run(self, dispatcher, tracker, domain):
         data = _get(f"/api/employees/{_employee_id(tracker)}/leave")
         if not data:
-            _reply(dispatcher, API_DOWN_MESSAGE)
+            _reply(dispatcher, API_DOWN_MESSAGE, unanswered=True)
             return [SlotSet("pending_leave_count", 0)]
 
         pending = [r for r in data["leaveHistory"] if r["status"] == "Pending"]
@@ -363,7 +371,7 @@ class ActionCancelLeave(Action):
         employee_id = _employee_id(tracker)
         data = _get(f"/api/employees/{employee_id}/leave")
         if not data:
-            _reply(dispatcher, API_DOWN_MESSAGE)
+            _reply(dispatcher, API_DOWN_MESSAGE, unanswered=True)
             return []
 
         pending = [r for r in data["leaveHistory"] if r["status"] == "Pending"]
@@ -383,7 +391,7 @@ class ActionCancelLeave(Action):
 
         result = _post(f"/api/employees/{employee_id}/leave/{target['id']}/cancel", {})
         if not result:
-            _reply(dispatcher, "I couldn't cancel that just now -- please try again shortly.")
+            _reply(dispatcher, "I couldn't cancel that just now -- please try again shortly.", unanswered=True)
             return []
 
         facts = result.get("facts", {})
@@ -495,7 +503,7 @@ class ActionCheckParentalEligibility(Action):
     def run(self, dispatcher, tracker, domain):
         data = _get(f"/api/employees/{_employee_id(tracker)}")
         if not data:
-            _reply(dispatcher, API_DOWN_MESSAGE)
+            _reply(dispatcher, API_DOWN_MESSAGE, unanswered=True)
             return []
 
         employee = data["employee"]
@@ -559,6 +567,7 @@ class ActionPolicyAnswer(Action):
             _reply(
                 dispatcher,
                 "I couldn't reach the policy library just now. Please try again shortly.",
+                unanswered=True,
             )
             return []
 
@@ -594,7 +603,7 @@ class ActionCareerPathAdvice(Action):
     def run(self, dispatcher, tracker, domain):
         employee_data = _get(f"/api/employees/{_employee_id(tracker)}")
         if not employee_data:
-            _reply(dispatcher, API_DOWN_MESSAGE)
+            _reply(dispatcher, API_DOWN_MESSAGE, unanswered=True)
             return []
 
         from_department = employee_data["employee"]["department"]
@@ -605,6 +614,7 @@ class ActionCareerPathAdvice(Action):
             _reply(
                 dispatcher,
                 "I couldn't reach the career path library just now. Please try again shortly.",
+                unanswered=True,
             )
             return []
 
@@ -634,6 +644,9 @@ class ActionCareerPathAdvice(Action):
                     ("Check", "Applied the Internal Transfer eligibility rules"),
                     ("Answer", "Said so honestly instead of guessing at a plan"),
                 ),
+                # A genuine content gap, not an infra failure like the others above -- but
+                # exactly what 3.3.3 wants surfaced: nobody's authored a path for this pair.
+                unanswered=True,
             )
             return []
 

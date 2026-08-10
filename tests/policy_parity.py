@@ -1,13 +1,18 @@
 """Parity check: does the database-backed policy repository behave identically to the JSON one?
 
-The gate for the migration. Policies are read by both chat engines, the retrieval scorer, and
-the career flow's citations, so switching the source in one step would put all of that on
-untested code at once. Instead the two run side by side and this proves they agree, before
-anything is repointed.
+Was the gate for the JSON-to-database migration -- it proved the mirror matched before
+anything was repointed. That cutover is done; app.py's seed_policies() now seeds an empty
+table once and never re-syncs, because policies are edited live through the admin UI
+(/api/admin/policies) and a resync would silently discard those edits.
 
-Both repositories call the same scorer (services/policy_search.py), so any difference this
-finds is in the DATA layer -- a seeding bug, an ordering difference, a mangled rules array --
-which is exactly what the migration risks.
+This means a FAIL here after the cutover is not automatically a bug. If someone has added or
+edited a policy through the admin UI since the database was seeded, the file and the database
+are SUPPOSED to differ now -- that divergence is the point of having an editable policy store.
+Treat a failure as a prompt to check which side changed on purpose, not as "do not cut over"
+the way it was written to be read originally.
+
+Still useful for: confirming a fresh seed matches its source file, and confirming
+POLICY_SOURCE=json (the rollback path) still reads the file correctly.
 
 Run:
     backend\\.venv\\Scripts\\python.exe tests\\policy_parity.py

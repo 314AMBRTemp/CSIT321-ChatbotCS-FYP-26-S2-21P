@@ -191,6 +191,8 @@ function TranscriptList({ messages, showWho = false, emptyText }) {
             {showWho ? <span className="transcript-who">{m.employeeName}</span> : null}
             <span className="transcript-time">{formatTimestamp(m.createdAt)}</span>
             {m.policyUsed ? <span className="transcript-source">§ {m.policyUsed}</span> : null}
+            {m.unanswered ? <span className="transcript-flag">Unanswered</span> : null}
+            {m.feedback ? <span className="transcript-feedback">{m.feedback === "up" ? "👍" : "👎"}</span> : null}
           </div>
           <div className="transcript-q">{m.question}</div>
           <div className="transcript-a">{m.response}</div>
@@ -213,7 +215,186 @@ function HistoryPage({ messages }) {
   );
 }
 
-function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
+function AnalyticsSection({ analytics }) {
+  if (!analytics) return null;
+  return (
+    <>
+      <div className="section-title">Usage analytics</div>
+      <div className="stats">
+        <div className="stat-card"><div className="stat-label">Unanswered</div><div className="stat-value v-amber">{analytics.unansweredCount} <span className="stat-sub">({Math.round(analytics.unansweredRate * 100)}%)</span></div></div>
+        <div className="stat-card"><div className="stat-label">Feedback</div><div className="stat-value v-teal">👍 {analytics.feedback.up} · 👎 {analytics.feedback.down}</div></div>
+        <div className="stat-card"><div className="stat-label">Open HR requests</div><div className="stat-value v-violet">{analytics.openHrRequests}</div></div>
+      </div>
+
+      <div className="two-col">
+        <div>
+          <div className="section-title">Most-asked topics</div>
+          {analytics.topTopics.length ? (
+            <div className="table-card">
+              <table>
+                <thead><tr><th>Topic</th><th>Questions</th></tr></thead>
+                <tbody>
+                  {analytics.topTopics.map((row) => (
+                    <tr key={row.topic}><td>{row.topic}</td><td>{row.count}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="empty-text">No policy citations logged yet.</p>}
+        </div>
+        <div>
+          <div className="section-title">HR requests by topic</div>
+          {analytics.hrRequestsByTopic.length ? (
+            <div className="table-card">
+              <table>
+                <thead><tr><th>Topic</th><th>Requests</th></tr></thead>
+                <tbody>
+                  {analytics.hrRequestsByTopic.map((row) => (
+                    <tr key={row.topic}><td>{row.topic}</td><td>{row.count}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="empty-text">No HR requests raised yet.</p>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+const emptyPolicyForm = { id: "", title: "", category: "", summary: "", rules: "" };
+
+function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyPolicyForm);
+  const [creating, setCreating] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  function startEdit(policy) {
+    setEditingId(policy.id);
+    setCreating(false);
+    setForm({
+      id: policy.id,
+      title: policy.title,
+      category: policy.category,
+      summary: policy.summary,
+      rules: (policy.rules || []).join("\n"),
+    });
+  }
+
+  function startCreate() {
+    setCreating(true);
+    setEditingId(null);
+    setForm(emptyPolicyForm);
+  }
+
+  function cancel() {
+    setEditingId(null);
+    setCreating(false);
+    setForm(emptyPolicyForm);
+  }
+
+  async function save() {
+    const payload = {
+      title: form.title,
+      category: form.category,
+      summary: form.summary,
+      // One rule per line in the textarea; blank lines dropped so a trailing newline
+      // doesn't become an empty bullet in every policy answer.
+      rules: form.rules.split("\n").map((r) => r.trim()).filter(Boolean),
+    };
+    setBusy(true);
+    try {
+      if (creating) {
+        await onCreate({ id: form.id, ...payload });
+      } else {
+        await onUpdate(editingId, payload);
+      }
+      cancel();
+    } catch {
+      // Already surfaced via showToast in the App-level handler; the form stays open with
+      // what was typed so a failed save doesn't also cost the user their edits.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="section-title">
+        Manage policies
+        <span className="section-hint"> — also where FAQ-style entries go; there's no separate FAQ store, so a consistent answer never has two places to drift apart</span>
+      </div>
+
+      {source !== "database" ? (
+        <div className="hint-box hint-warn">
+          POLICY_SOURCE is currently "{source}", so the app is reading policies from the file,
+          not the database. Edits here still save, but won't be visible until the source is
+          switched back to "database".
+        </div>
+      ) : null}
+
+      <div className="table-card">
+        <table>
+          <thead><tr><th>ID</th><th>Title</th><th>Category</th><th></th></tr></thead>
+          <tbody>
+            {policies.map((p) => (
+              <tr key={p.id}>
+                <td>{p.id}</td>
+                <td>{p.title}</td>
+                <td>{p.category}</td>
+                <td className="table-actions">
+                  <button className="btn-link" onClick={() => startEdit(p)}>Edit</button>
+                  <button className="btn-link btn-link-danger" onClick={() => onDelete(p.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {!creating && !editingId ? (
+        <button className="cb-action-btn" onClick={startCreate}>Add policy</button>
+      ) : (
+        <div className="form-card">
+          <div className="form-group">
+            <label>ID (e.g. TRAVEL-01 — pick something new for an FAQ entry)</label>
+            <input
+              value={form.id}
+              disabled={!creating}
+              onChange={(e) => setForm({ ...form, id: e.target.value.toUpperCase() })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Title</label>
+            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>Category</label>
+            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>Summary</label>
+            <textarea rows={2} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>Rules (one per line)</label>
+            <textarea rows={5} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} />
+          </div>
+          <div className="table-actions">
+            <button className="cb-action-btn" disabled={busy} onClick={save}>Save</button>
+            <button className="btn-link" disabled={busy} onClick={cancel}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function AdminPage({ data, users, filter, onFilterChange, hrRequests, analytics, policies, policySource, onCreatePolicy, onUpdatePolicy, onDeletePolicy }) {
+  const [unansweredOnly, setUnansweredOnly] = useState(false);
+  const messages = unansweredOnly ? (data?.messages || []).filter((m) => m.unanswered) : data?.messages;
+
   return (
     <main className="page">
       <h1 className="page-title">Support — conversation log</h1>
@@ -228,6 +409,8 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
         <div className="stat-card"><div className="stat-label">Open HR requests</div><div className="stat-value v-amber">{hrRequests?.filter((r) => r.status === "Open").length ?? 0}</div></div>
       </div>
 
+      <AnalyticsSection analytics={analytics} />
+
       {/* Sits above the transcript on purpose: these are the conversations where the
           employee actually asked for a human, so they are the ones needing action rather
           than review. */}
@@ -236,7 +419,7 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
         <div className="table-card">
           <table>
             <thead>
-              <tr><th>Raised</th><th>Employee</th><th>Topic</th><th>What they asked</th><th>Manager copied</th><th>Status</th></tr>
+              <tr><th>Raised</th><th>Employee</th><th>Topic</th><th>What they asked</th><th>Manager copied</th><th>Assigned to</th><th>Status</th></tr>
             </thead>
             <tbody>
               {hrRequests.map((row) => (
@@ -246,6 +429,7 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
                   <td>{row.topic}</td>
                   <td>{row.question}</td>
                   <td>{row.managerEmail || "—"}</td>
+                  <td>{row.assignedToName || "—"}</td>
                   <td><span className={`status-pill s-${row.status.toLowerCase()}`}>{row.status}</span></td>
                 </tr>
               ))}
@@ -255,6 +439,16 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
       ) : (
         <div className="hint-box">No one has asked AskIvy to raise anything with HR yet.</div>
       )}
+
+      {policies ? (
+        <PolicyManager
+          policies={policies}
+          source={policySource}
+          onCreate={onCreatePolicy}
+          onUpdate={onUpdatePolicy}
+          onDelete={onDeletePolicy}
+        />
+      ) : null}
 
       <div className="form-card">
         <div className="form-group">
@@ -266,13 +460,17 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests }) {
             ))}
           </select>
         </div>
+        <label className="checkbox-row">
+          <input type="checkbox" checked={unansweredOnly} onChange={(e) => setUnansweredOnly(e.target.checked)} />
+          Show only unanswered
+        </label>
       </div>
 
       <div className="section-title">Transcript</div>
       <TranscriptList
-        messages={data?.messages}
+        messages={messages}
         showWho
-        emptyText="No conversations recorded yet."
+        emptyText={unansweredOnly ? "No unanswered questions in the current view." : "No conversations recorded yet."}
       />
     </main>
   );
@@ -343,6 +541,12 @@ function App() {
   const [adminData, setAdminData] = useState(null);
   const [adminFilter, setAdminFilter] = useState("");
   const [hrRequests, setHrRequests] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  // Distinct from `policies` above (the public read-only list on the Policies page) --
+  // this one is fetched fresh per admin action so an edit is reflected immediately without
+  // waiting for the next scheduled refresh.
+  const [adminPolicies, setAdminPolicies] = useState(null);
+  const [policySource, setPolicySource] = useState("database");
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -380,7 +584,50 @@ function App() {
     api.adminHrRequests(currentUser.id)
       .then(setHrRequests)
       .catch(() => setHrRequests([]));
+    api.adminAnalytics(currentUser.id)
+      .then(setAnalytics)
+      .catch(() => setAnalytics(null));
+    refreshAdminPolicies();
   }, [currentUser?.id, currentUser?.isAdmin, activePage, adminFilter]);
+
+  function refreshAdminPolicies() {
+    if (!currentUser?.isAdmin) return;
+    api.adminPolicies(currentUser.id)
+      .then((res) => { setAdminPolicies(res.policies); setPolicySource(res.source); })
+      .catch(() => setAdminPolicies([]));
+  }
+
+  async function createPolicy(policy) {
+    try {
+      await api.adminCreatePolicy(currentUser.id, policy);
+      showToast(`Policy "${policy.id}" created.`);
+      refreshAdminPolicies();
+    } catch (err) {
+      showToast(err.message || "Couldn't create that policy.");
+      throw err; // keeps the PolicyManager form open on failure
+    }
+  }
+
+  async function updatePolicy(policyId, policy) {
+    try {
+      await api.adminUpdatePolicy(currentUser.id, policyId, policy);
+      showToast(`Policy "${policyId}" updated.`);
+      refreshAdminPolicies();
+    } catch (err) {
+      showToast(err.message || "Couldn't save that policy.");
+      throw err;
+    }
+  }
+
+  async function deletePolicy(policyId) {
+    try {
+      await api.adminDeletePolicy(currentUser.id, policyId);
+      showToast(`Policy "${policyId}" deleted.`);
+      refreshAdminPolicies();
+    } catch (err) {
+      showToast(err.message || "Couldn't delete that policy.");
+    }
+  }
 
   function showToast(message) {
     setToast(message);
@@ -458,7 +705,19 @@ function App() {
       {activePage === "profile" && profileData ? <ProfilePage data={profileData} /> : null}
       {activePage === "policies" ? <PoliciesPage policies={policies} /> : null}
       {activePage === "admin" && currentUser.isAdmin ? (
-        <AdminPage data={adminData} users={users} filter={adminFilter} onFilterChange={setAdminFilter} hrRequests={hrRequests} />
+        <AdminPage
+          data={adminData}
+          users={users}
+          filter={adminFilter}
+          onFilterChange={setAdminFilter}
+          hrRequests={hrRequests}
+          analytics={analytics}
+          policies={adminPolicies}
+          policySource={policySource}
+          onCreatePolicy={createPolicy}
+          onUpdatePolicy={updatePolicy}
+          onDeletePolicy={deletePolicy}
+        />
       ) : null}
 
       <ChatWidget employee={currentUser} onLeaveSubmitted={refreshAll} showToast={showToast} />

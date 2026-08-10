@@ -37,7 +37,10 @@ class Employee(db.Model):
 
     leave_requests = db.relationship("LeaveRequest", back_populates="employee", cascade="all, delete-orphan")
     chat_messages = db.relationship("ChatMessage", back_populates="employee", cascade="all, delete-orphan")
-    hr_requests = db.relationship("HRRequest", back_populates="employee", cascade="all, delete-orphan")
+    hr_requests = db.relationship(
+        "HRRequest", back_populates="employee", cascade="all, delete-orphan",
+        foreign_keys="HRRequest.employee_id",
+    )
 
     def to_dict(self):
         return {
@@ -175,10 +178,15 @@ class HRRequest(db.Model):
     # Copied at creation, not looked up later: if the employee changes manager afterwards,
     # the record should still show who was actually copied at the time.
     manager_email = db.Column(db.String(160), nullable=True)
+    # Who on the support/HR side owns this. Set at creation (app.py defaults it to the
+    # support account) rather than left to be claimed later -- with one working HR/support
+    # persona in this demo, "assigned" would otherwise be a UI promise nothing backs.
+    assigned_to = db.Column(db.String(32), db.ForeignKey("employees.id"), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="Open")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
-    employee = db.relationship("Employee", back_populates="hr_requests")
+    employee = db.relationship("Employee", back_populates="hr_requests", foreign_keys=[employee_id])
+    assignee = db.relationship("Employee", foreign_keys=[assigned_to])
 
     def to_dict(self):
         return {
@@ -190,6 +198,8 @@ class HRRequest(db.Model):
             "question": self.question,
             "situation": self.situation,
             "managerEmail": self.manager_email,
+            "assignedTo": self.assigned_to,
+            "assignedToName": self.assignee.name if self.assignee else None,
             "status": self.status,
             "createdAt": self.created_at.isoformat(),
         }
@@ -203,6 +213,15 @@ class ChatMessage(db.Model):
     question = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text, nullable=False)
     policy_used = db.Column(db.String(255), nullable=True)
+    # True only at genuine "couldn't answer" branches -- HRMS/career-library unreachable,
+    # no career path on file for the requested pair. NOT true for a fuzzy policy match or a
+    # chitchat deflection; both of those are complete, honest answers, not gaps. Set by the
+    # engine that produced the reply, not inferred here from the response text.
+    unanswered = db.Column(db.Boolean, nullable=False, default=False)
+    # "up" / "down" / NULL (no feedback given). A free column rather than a linked table --
+    # one reaction per message is all the story asks for, and it keeps the read side a plain
+    # column instead of a join.
+    feedback = db.Column(db.String(10), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     employee = db.relationship("Employee", back_populates="chat_messages")
@@ -213,5 +232,7 @@ class ChatMessage(db.Model):
             "question": self.question,
             "response": self.response,
             "policyUsed": self.policy_used,
+            "unanswered": self.unanswered,
+            "feedback": self.feedback,
             "createdAt": self.created_at.isoformat(),
         }

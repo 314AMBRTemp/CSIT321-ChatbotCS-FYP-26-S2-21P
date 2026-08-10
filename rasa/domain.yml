@@ -166,12 +166,16 @@ responses:
   # Rasa picks one of these at random each time. Variations rather than a rephrasing call:
   # same effect on the repetitiveness, none of the latency, and no chance of the model
   # wandering off-message on the app's most frequent line.
+  # This prompt exists to collect a yes/no continue_conversation slot -- every variation
+  # must actually read as a question, or it stops being a fair thing to ask a slot-filling
+  # answer to. Two earlier variations ("Let me know if...", "Happy to keep going...") were
+  # statements, not questions -- caught by api_checks.py asserting a closer always ends
+  # with "?", which two of the five randomly-selected phrasings failed.
   utter_ask_continue_conversation:
     - text: "Anything else I can help with?"
     - text: "Anything else on your mind?"
-    - text: "Let me know if there's anything else."
     - text: "Anything else you need?"
-    - text: "Happy to keep going if you've got more."
+    - text: "Is there anything else I can help with?"
 
   utter_can_do_something_else:
     - text: "Sure -- what else can I help with?"

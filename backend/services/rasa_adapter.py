@@ -58,6 +58,7 @@ def _blank_answer(text):
         "policyId": None,
         "policyTopic": None,
         "situation": None,
+        "unanswered": False,
     }
 
 
@@ -105,6 +106,7 @@ def _merge_rasa_messages(messages):
         "policyId": metadata.get("policyId") or None,
         "policyTopic": metadata.get("policyTopic") or None,
         "situation": metadata.get("situation") or None,
+        "unanswered": bool(metadata.get("unanswered", False)),
         "buttons": [
             {"title": str(b.get("title", "")), "payload": str(b.get("payload", ""))}
             for b in buttons
@@ -152,10 +154,12 @@ def askivy_chat_rasa():
         question=str(payload.get("displayText") or question),
         response=answer["text"],
         policy_used=answer.get("source"),
+        unanswered=bool(answer.get("unanswered", False)),
     )
     db.session.add(chat)
     db.session.commit()
 
+    answer["chatMessageId"] = chat.id
     return jsonify(answer)
 
 

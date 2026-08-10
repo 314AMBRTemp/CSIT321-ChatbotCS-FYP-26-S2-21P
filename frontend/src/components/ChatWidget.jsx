@@ -13,13 +13,50 @@ const suggestions = [
   "What would it take to move into Sales?",
 ];
 
+// Session timeout warning (3.1.4). There's no real server-side session to expire --
+// sender_id is the employee id and the Rasa tracker persists indefinitely -- so this is a
+// purely frontend idle clock over an open widget, checked on a slow interval rather than
+// nested setTimeouts. Warn once, then actually reset (clear the transcript + the Rasa
+// tracker) rather than leaving the warning to rot forever if nobody comes back.
+const IDLE_WARNING_MS = 4 * 60 * 1000;
+const IDLE_RESET_MS = 5 * 60 * 1000;
+const IDLE_CHECK_INTERVAL_MS = 10 * 1000;
+
 function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   const bodyRef = useRef(null);
   const inputRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+
+  function bumpActivity() {
+    lastActivityRef.current = Date.now();
+    setShowTimeoutWarning(false);
+  }
+
+  // Idle clock: only runs while the widget is open, so a closed tab doesn't silently reset
+  // conversation state nobody's looking at. Polls rather than a single setTimeout so the
+  // warning threshold and the reset threshold don't need two coordinated timers re-armed
+  // on every message.
+  useEffect(() => {
+    if (!open) return undefined;
+    bumpActivity(); // opening the widget itself counts as activity
+    const interval = setInterval(() => {
+      const idleFor = Date.now() - lastActivityRef.current;
+      if (idleFor >= IDLE_RESET_MS) {
+        setMessages([]);
+        if (employee?.id) api.askIvyRasaReset(employee.id).catch(() => {});
+        showToast("Conversation reset after 5 minutes of inactivity.");
+        bumpActivity();
+      } else if (idleFor >= IDLE_WARNING_MS) {
+        setShowTimeoutWarning(true);
+      }
+    }, IDLE_CHECK_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [open, employee?.id]);
 
   useEffect(() => {
     setMessages([]);
@@ -48,6 +85,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
     const question = (customQuestion || input).trim();
     if (!question || loading) return;
 
+    bumpActivity();
     setInput("");
     setLoading(true);
     setMessages((prev) => [
@@ -100,6 +138,22 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
       );
     } catch (err) {
       showToast(err.message || "Couldn't raise that with HR.");
+    }
+  }
+
+  // Thumbs up/down (3.5.1). Clicking the already-selected thumb clears the rating (sends
+  // null) rather than doing nothing -- a misclick shouldn't be permanent. Only messages
+  // that actually made it into chat_messages carry a chatMessageId; the local
+  // API-unavailable error bubble doesn't, so it correctly gets no thumbs at all.
+  async function rateFeedback(index, message, value) {
+    const next = message.feedback === value ? null : value;
+    setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, feedback: next } : m)));
+    try {
+      await api.rateMessage(message.chatMessageId, next);
+    } catch (err) {
+      // Roll back on failure rather than leave the UI claiming a rating that didn't save.
+      setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, feedback: message.feedback } : m)));
+      showToast(err.message || "Couldn't save that rating.");
     }
   }
 
@@ -158,12 +212,20 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
               employee={employee}
               onSubmitLeave={submitLeave}
               onRaiseHr={() => raiseHrRequest(message, index)}
+              onRateFeedback={(value) => rateFeedback(index, message, value)}
               onButton={ask}
               isLast={index === messages.length - 1}
               loading={loading}
             />
           ))}
         </div>
+
+        {showTimeoutWarning ? (
+          <div className="chat-idle-warning">
+            Still there? This conversation will reset after a minute of inactivity.
+            <button className="chat-idle-dismiss" onClick={bumpActivity}>I'm still here</button>
+          </div>
+        ) : null}
 
         <div className="chat-input-bar">
           <textarea
@@ -181,7 +243,7 @@ function ChatWidget({ employee, onLeaveSubmitted, showToast }) {
   );
 }
 
-function Message({ message, employee, onSubmitLeave, onRaiseHr, onButton, isLast, loading }) {
+function Message({ message, employee, onSubmitLeave, onRaiseHr, onRateFeedback, onButton, isLast, loading }) {
   if (message.role === "user") {
     return <div className="cb-user"><div className="cb-user-bubble">{message.text}</div></div>;
   }
@@ -202,6 +264,27 @@ function Message({ message, employee, onSubmitLeave, onRaiseHr, onButton, isLast
         {message.isRecommendation ? <div className="cb-bot-tag action">Recommendation</div> : <div className="cb-bot-tag personal">Personalised for {employee.name.split(" ")[0]}</div>}
         <div className="cb-bot-text">{message.text}</div>
         {message.source ? <div className="cb-source">§ {message.source}</div> : null}
+        {/* Available on every past reply, not just the newest -- rating something you asked
+            two turns ago is still meaningful. Only shown once the reply is actually a
+            logged row (chatMessageId present); the local network-error bubble isn't. */}
+        {message.chatMessageId ? (
+          <div className="cb-feedback">
+            <button
+              className={`cb-feedback-btn ${message.feedback === "up" ? "active" : ""}`}
+              aria-label="Helpful"
+              onClick={() => onRateFeedback("up")}
+            >
+              👍
+            </button>
+            <button
+              className={`cb-feedback-btn ${message.feedback === "down" ? "active" : ""}`}
+              aria-label="Not helpful"
+              onClick={() => onRateFeedback("down")}
+            >
+              👎
+            </button>
+          </div>
+        ) : null}
         {/* Only the newest reply keeps its buttons — stale choices from earlier
             turns are no longer answerable. The rule-based engine sends none. */}
         {isLast && message.buttons?.length ? (

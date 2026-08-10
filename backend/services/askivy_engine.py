@@ -254,11 +254,17 @@ def answer_question(employee, question):
     if reply:
         return reply
 
+    # In practice unreachable today: score_policies() always returns at least the two
+    # closest policies rather than an empty list, so build_policy_answer() never returns
+    # None while the table has any rows at all. Kept as a genuine "couldn't answer" branch
+    # for the one case that would actually produce it -- an empty policy table -- rather
+    # than deleted as dead code.
     return {
         "text": "I couldn't find a policy covering that. Try asking AskIvy about compassionate leave, annual leave, sick leave, parental leave, work from home, notice period, bonus, expenses, or conduct.",
         "source": _source(policies),
         "isRecommendation": False,
         "canSubmitLeave": False,
+        "unanswered": True,
         "thinkingSteps": _thinking_steps(question, policies),
     }
 

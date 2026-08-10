@@ -37,6 +37,24 @@ export const api = {
     body: JSON.stringify(payload),
   }),
   adminHrRequests: (requesterId) => request(`/api/admin/hr-requests?requesterId=${encodeURIComponent(requesterId)}`),
+  // "up" / "down" / null (null clears a previous rating).
+  rateMessage: (chatMessageId, feedback) => request(`/api/chat-messages/${chatMessageId}/feedback`, {
+    method: "POST",
+    body: JSON.stringify({ feedback }),
+  }),
+  adminAnalytics: (requesterId) => request(`/api/admin/analytics?requesterId=${encodeURIComponent(requesterId)}`),
+  adminPolicies: (requesterId) => request(`/api/admin/policies?requesterId=${encodeURIComponent(requesterId)}`),
+  adminCreatePolicy: (requesterId, policy) => request(`/api/admin/policies?requesterId=${encodeURIComponent(requesterId)}`, {
+    method: "POST",
+    body: JSON.stringify(policy),
+  }),
+  adminUpdatePolicy: (requesterId, policyId, policy) => request(`/api/admin/policies/${encodeURIComponent(policyId)}?requesterId=${encodeURIComponent(requesterId)}`, {
+    method: "PUT",
+    body: JSON.stringify(policy),
+  }),
+  adminDeletePolicy: (requesterId, policyId) => request(`/api/admin/policies/${encodeURIComponent(policyId)}?requesterId=${encodeURIComponent(requesterId)}`, {
+    method: "DELETE",
+  }),
   adminChats: (requesterId, { employeeId = "", limit = 200 } = {}) => {
     const params = new URLSearchParams({ requesterId, limit: String(limit) });
     if (employeeId) params.set("employeeId", employeeId);
