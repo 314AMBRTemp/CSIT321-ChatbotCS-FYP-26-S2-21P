@@ -301,6 +301,25 @@ function Message({ message, employee, onSubmitLeave, onRaiseHr, onRateFeedback, 
             ))}
           </div>
         ) : null}
+        {/* 3.1.6 -- the policy search already ranked these as the next-closest matches to
+            what was just asked, so they're genuinely related, not generic. Only the newest
+            reply, same reasoning as the buttons above: a stale suggestion two turns back
+            is no longer the most relevant next question. */}
+        {isLast && message.relatedPolicies?.length ? (
+          <div className="cb-followups">
+            <div className="cb-followups-label">You might also ask:</div>
+            {message.relatedPolicies.map((p) => (
+              <button
+                className="chat-chip"
+                key={p.id}
+                disabled={loading}
+                onClick={() => onButton(`What about ${p.title}?`)}
+              >
+                What about {p.title}?
+              </button>
+            ))}
+          </div>
+        ) : null}
         {/* The reply ended by offering to take this to HR, so give them a way to say yes.
             Only on the newest reply, like the other buttons -- and it disappears once
             actioned rather than silently writing a second row. */}

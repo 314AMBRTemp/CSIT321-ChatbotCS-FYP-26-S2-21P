@@ -102,6 +102,7 @@ def _reply(
     thinking_steps: Optional[List[Dict[str, str]]] = None,
     hr_request: Optional[Dict[str, Any]] = None,
     unanswered: bool = False,
+    related_policies: Optional[List[Dict[str, str]]] = None,
 ) -> None:
     """Send the answer plus the metadata the ChatWidget renders.
 
@@ -126,6 +127,9 @@ def _reply(
                 "policyTopic": (hr_request or {}).get("policyTopic"),
                 "situation": (hr_request or {}).get("situation"),
                 "unanswered": bool(unanswered),
+                # 3.1.6 -- next-closest policy matches from the same search, surfaced as
+                # follow-up chips. Reuses ranking the scorer already did; no separate call.
+                "relatedPolicies": related_policies or [],
             }
         }
     )
@@ -587,6 +591,7 @@ class ActionPolicyAnswer(Action):
                 "policyTopic": answer.get("title"),
                 "situation": answer.get("situation"),
             },
+            related_policies=answer.get("relatedPolicies"),
         )
 
         # Suppresses the "anything else?" tail when the answer already ended by asking

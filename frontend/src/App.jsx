@@ -17,6 +17,18 @@ function formatDateRange(row) {
   return row.from === row.to ? row.from : `${row.from} → ${row.to}`;
 }
 
+// "In Progress" -> "in-progress", so it maps onto .s-in-progress in styles.css. A bare
+// .toLowerCase() breaks on any multi-word status because the space lands in the class
+// name literally -- caught once already when this table's own status pill did it.
+function statusClass(status) {
+  return `s-${status.toLowerCase().replace(/\s+/g, "-")}`;
+}
+
+// Mirrors HR_REQUEST_STATUSES in backend/app.py -- the backend still validates and rejects
+// anything outside this list, so a mismatch here would just make the dropdown offer an
+// option the server refuses, not a security issue.
+const HR_REQUEST_STATUSES = ["Open", "In Progress", "Closed"];
+
 function LeaveTable({ rows, onCancel }) {
   if (!rows?.length) return <p className="empty-text">No leave records yet.</p>;
   return (
@@ -202,11 +214,38 @@ function TranscriptList({ messages, showWho = false, emptyText }) {
   );
 }
 
-function HistoryPage({ messages }) {
+function HistoryPage({ messages, hrRequests }) {
   return (
     <main className="page">
       <h1 className="page-title">My conversations</h1>
       <p className="page-sub">Everything you've asked AskIvy, newest first.</p>
+
+      {/* 3.2.2 -- only shown once something's actually been raised, so this section
+          doesn't clutter the page for the majority of employees who never have. */}
+      {hrRequests?.length ? (
+        <>
+          <div className="section-title">My HR requests</div>
+          <div className="table-card">
+            <table>
+              <thead>
+                <tr><th>Raised</th><th>Topic</th><th>What I asked</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {hrRequests.map((row) => (
+                  <tr key={row.id}>
+                    <td>{new Date(row.createdAt).toLocaleString()}</td>
+                    <td>{row.topic}</td>
+                    <td>{row.question}</td>
+                    <td><span className={`status-pill ${statusClass(row.status)}`}>{row.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : null}
+
+      <div className="section-title">Transcript</div>
       <TranscriptList
         messages={messages}
         emptyText="You haven't asked AskIvy anything yet."
@@ -391,7 +430,7 @@ function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
   );
 }
 
-function AdminPage({ data, users, filter, onFilterChange, hrRequests, analytics, policies, policySource, onCreatePolicy, onUpdatePolicy, onDeletePolicy }) {
+function AdminPage({ data, users, filter, onFilterChange, hrRequests, onUpdateStatus, analytics, policies, policySource, onCreatePolicy, onUpdatePolicy, onDeletePolicy }) {
   const [unansweredOnly, setUnansweredOnly] = useState(false);
   const messages = unansweredOnly ? (data?.messages || []).filter((m) => m.unanswered) : data?.messages;
 
@@ -430,7 +469,15 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests, analytics,
                   <td>{row.question}</td>
                   <td>{row.managerEmail || "—"}</td>
                   <td>{row.assignedToName || "—"}</td>
-                  <td><span className={`status-pill s-${row.status.toLowerCase()}`}>{row.status}</span></td>
+                  <td>
+                    <select
+                      className={`status-select status-pill ${statusClass(row.status)}`}
+                      value={row.status}
+                      onChange={(e) => onUpdateStatus(row.id, e.target.value)}
+                    >
+                      {HR_REQUEST_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -538,6 +585,7 @@ function App() {
   const [profileData, setProfileData] = useState(null);
   const [policies, setPolicies] = useState([]);
   const [historyData, setHistoryData] = useState(null);
+  const [myHrRequests, setMyHrRequests] = useState([]);
   const [adminData, setAdminData] = useState(null);
   const [adminFilter, setAdminFilter] = useState("");
   const [hrRequests, setHrRequests] = useState([]);
@@ -579,11 +627,7 @@ function App() {
     api.adminChats(currentUser.id, { employeeId: adminFilter })
       .then(setAdminData)
       .catch((err) => showToast(err.message));
-    // Not filtered by employee: there are far fewer of these than chat messages, and a
-    // support user opening this tab wants to see everything outstanding.
-    api.adminHrRequests(currentUser.id)
-      .then(setHrRequests)
-      .catch(() => setHrRequests([]));
+    refreshHrRequests();
     api.adminAnalytics(currentUser.id)
       .then(setAnalytics)
       .catch(() => setAnalytics(null));
@@ -595,6 +639,26 @@ function App() {
     api.adminPolicies(currentUser.id)
       .then((res) => { setAdminPolicies(res.policies); setPolicySource(res.source); })
       .catch(() => setAdminPolicies([]));
+  }
+
+  // Not filtered by employee: there are far fewer of these than chat messages, and a
+  // support user opening this tab wants to see everything outstanding. Also called
+  // directly after a status update (3.2.5) so the table reflects it immediately rather
+  // than waiting for the next filter change to re-trigger the effect above.
+  function refreshHrRequests() {
+    if (!currentUser?.isAdmin) return;
+    api.adminHrRequests(currentUser.id)
+      .then(setHrRequests)
+      .catch(() => setHrRequests([]));
+  }
+
+  async function updateHrRequestStatus(requestId, status) {
+    try {
+      await api.adminUpdateHrRequestStatus(currentUser.id, requestId, status);
+      refreshHrRequests();
+    } catch (err) {
+      showToast(err.message || "Couldn't update that request's status.");
+    }
   }
 
   async function createPolicy(policy) {
@@ -638,16 +702,18 @@ function App() {
     if (!employeeId) return;
     setLoading(true);
     try {
-      const [dashboard, leave, profile, history] = await Promise.all([
+      const [dashboard, leave, profile, history, hrRequests] = await Promise.all([
         api.dashboard(employeeId),
         api.leave(employeeId),
         api.profile(employeeId),
         api.chatHistory(employeeId),
+        api.employeeHrRequests(employeeId),
       ]);
       setDashboardData(dashboard);
       setLeaveData(leave);
       setProfileData(profile);
       setHistoryData(history);
+      setMyHrRequests(hrRequests);
     } catch (err) {
       showToast(err.message);
     } finally {
@@ -701,7 +767,7 @@ function App() {
       {loading && !activeData ? <main className="page"><p>Loading HRMS data...</p></main> : null}
       {activePage === "dashboard" && dashboardData ? <DashboardPage data={dashboardData} onCancel={cancelLeave} /> : null}
       {activePage === "leave" && leaveData ? <LeavePage data={leaveData} employeeId={employeeId} refresh={refreshAll} showToast={showToast} onCancel={cancelLeave} /> : null}
-      {activePage === "history" && historyData ? <HistoryPage messages={historyData.messages} /> : null}
+      {activePage === "history" && historyData ? <HistoryPage messages={historyData.messages} hrRequests={myHrRequests} /> : null}
       {activePage === "profile" && profileData ? <ProfilePage data={profileData} /> : null}
       {activePage === "policies" ? <PoliciesPage policies={policies} /> : null}
       {activePage === "admin" && currentUser.isAdmin ? (
@@ -711,6 +777,7 @@ function App() {
           filter={adminFilter}
           onFilterChange={setAdminFilter}
           hrRequests={hrRequests}
+          onUpdateStatus={updateHrRequestStatus}
           analytics={analytics}
           policies={adminPolicies}
           policySource={policySource}

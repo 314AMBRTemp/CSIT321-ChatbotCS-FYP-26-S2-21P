@@ -81,4 +81,9 @@ def build_policy_answer(employee, question):
         "endsWithQuestion": bool(offer),
         "canRaiseHrRequest": bool(offer),
         "managerEmail": (employee or {}).get("managerEmail"),
+        # 3.1.6 -- the scorer already ranked these as the next-closest matches to the
+        # question just asked, so they're a free, contextually relevant set of follow-up
+        # suggestions. No extra computation, no LLM call: reusing what search_policies()
+        # already returned rather than asking the model to invent related questions.
+        "relatedPolicies": [{"id": p["id"], "title": p["title"]} for p in matches[1:3]],
     }

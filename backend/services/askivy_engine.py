@@ -140,6 +140,7 @@ def _policy_reply(employee, question, policies):
         # The offer is itself a question, so the widget must not tack another one on.
         "endsWithQuestion": answer["endsWithQuestion"],
         "thinkingSteps": _thinking_steps(question, policies),
+        "relatedPolicies": answer["relatedPolicies"],
     }
 
 

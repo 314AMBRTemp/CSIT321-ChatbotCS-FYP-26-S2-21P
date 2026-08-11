@@ -32,6 +32,11 @@ def _require_admin():
     return requester, None
 
 
+# 3.2.5 -- Open -> In Progress -> Closed is enough to show progress without inventing a
+# full ticketing workflow. HRRequest.status defaults to "Open" and only this list moves it.
+HR_REQUEST_STATUSES = ["Open", "In Progress", "Closed"]
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -150,6 +155,15 @@ def create_app():
             "messages": [m.to_dict() for m in messages],
         })
 
+    @app.get("/api/employees/<employee_id>/hr-requests")
+    def employee_hr_requests(employee_id):
+        """One employee's own raised requests, so they can check progress on something they
+        asked AskIvy to escalate (3.2.2). No admin gate -- it's their own data, same as
+        /leave and /chat above."""
+        employee = Employee.query.get_or_404(employee_id)
+        rows = HRRequest.query.filter_by(employee_id=employee.id).order_by(HRRequest.created_at.desc()).all()
+        return jsonify([row.to_dict() for row in rows])
+
     @app.get("/api/admin/chats")
     def admin_chats():
         """Every conversation, for the support views. Optional ?employeeId= filter.
@@ -263,6 +277,27 @@ def create_app():
 
         rows = HRRequest.query.order_by(HRRequest.created_at.desc()).all()
         return jsonify([row.to_dict() for row in rows])
+
+    @app.patch("/api/admin/hr-requests/<int:request_id>")
+    def admin_update_hr_request_status(request_id):
+        """3.2.5 -- the other half of 3.2.2: without this, HRRequest.status was written once
+        at creation and never touched again, so "checking progress" always showed Open."""
+        _, error = _require_admin()
+        if error:
+            return error
+
+        hr_request = db.session.get(HRRequest, request_id)
+        if not hr_request:
+            return jsonify({"error": "Unknown request."}), 404
+
+        payload = request.get_json(silent=True) or {}
+        status = payload.get("status")
+        if status not in HR_REQUEST_STATUSES:
+            return jsonify({"error": f"status must be one of {HR_REQUEST_STATUSES}."}), 400
+
+        hr_request.status = status
+        db.session.commit()
+        return jsonify(hr_request.to_dict())
 
     @app.post("/api/chat-messages/<int:message_id>/feedback")
     def rate_chat_message(message_id):

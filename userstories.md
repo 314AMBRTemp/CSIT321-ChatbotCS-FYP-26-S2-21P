@@ -1,8 +1,8 @@
 # AskIvy — User Stories
 
 Sections 3.1–3.5. The 3.1 rows were marked **YHF** in the original; the rest had no owner set.
-Wording unchanged; only the grouping is new. Status assessed **2026-08-10**, refreshed same day
-after landing 3.1.4, 3.2.4, 3.3.3, 3.4.2, 3.4.3, 3.4.4, and 3.5.1 in one batch.
+Wording unchanged; only the grouping is new. Status assessed **2026-08-10**, refreshed
+**2026-08-11** after landing 3.1.6, 3.2.2, and 3.2.5.
 
 Sorted by status rather than by section. Every row keeps its original `3.x.n` ID, so it still
 maps back to the report's numbering.
@@ -12,11 +12,11 @@ maps back to the report's numbering.
 > scope, it simply refers the employee to the HR Dept through normal channels.
 
 **Legend:** ✅ done · ⚠️ partial · ❌ not started
-**Score:** 16 done · 4 partial · 6 not started (26 total)
+**Score:** 19 done · 4 partial · 3 not started (26 total)
 
 ---
 
-## ✅ Done (16)
+## ✅ Done (19)
 
 | ID | Role | Title | Story | What implements it |
 |---|---|---|---|---|
@@ -25,9 +25,12 @@ maps back to the report's numbering.
 | 3.1.3 | Employee | Leave Application | Apply for leave through the chatbot, without filling out a separate form. | `apply_for_leave` flow — actually writes a `Pending` row to the database |
 | 3.1.4 | Employee | Session Timeout Warning | Warn before the chat session times out. | No real server session to expire (the Rasa tracker persists indefinitely), so this is a frontend idle clock over the open widget: a banner at 4 minutes idle, an actual reset (transcript cleared, Rasa tracker reset) at 5 — see `ChatWidget.jsx`. |
 | 3.1.5 | Employee | Conversation History | View previous conversations, to refer back to earlier answers. | `GET /api/employees/<id>/chat` + the **History** page in the app nav, listing every past exchange newest-first |
+| 3.1.6 | Employee | Suggested Follow-up Questions | Suggest related questions **after** an answer. | The policy scorer already ranks the next-closest matches to every question asked; `build_policy_answer()` now surfaces those as `relatedPolicies` instead of discarding them. Rendered as clickable chips ("What about Parental Leave?") under the reply, on both engines. No LLM call, no new computation — reused what `search_policies()` already returned. |
 | 3.1.7 | Employee | Display HR Policy Source | See the policy section used to answer, to verify the information. | `source` field rendered as `§ {source}` in `ChatWidget`; now backed by the database-mirrored policy table rather than the raw JSON file |
 | 3.1.9 | Employee | Chatbot Confidence | Be told when the bot can't confidently answer, so I know to ask HR. | Honest fallbacks throughout: career "no plan yet", `API_DOWN_MESSAGE`, chitchat deflection |
+| 3.2.2 | Employee | Case Follow-up | Check the status of a submitted case. | `GET /api/employees/<id>/hr-requests` — no admin gate, it's the employee's own data, same pattern as `/leave` and `/chat`. Rendered as a **My HR requests** section on the History page, hidden entirely when empty rather than showing a permanent zero-row table to employees who've never raised anything. |
 | 3.2.4 | HR Dept | View Assigned Case | View cases escalated by the chatbot. | The Support tab's HR Requests table now has an **Assigned to** column. Every request auto-assigns to the support/HR account at creation (`assigned_to` on `HRRequest`) — honest for this demo's one working HR persona; a real multi-person HR team would need a real claim/reassign step. |
+| 3.2.5 | HR Dept | Update Case Status | Update a case so the employee sees progress. | `PATCH /api/admin/hr-requests/<id>`, admin-gated, validated against `Open → In Progress → Closed`. Rendered as an editable dropdown styled as the existing status pill in the Support table. The employee-facing 3.2.2 view reflects it immediately — same row, same `status` field, no separate sync needed. |
 | 3.3.1 | Employee | Clear Referral When Unresolved | Be told clearly when the bot can't help, so I contact HR instead. | Career no-match branch, policy fallbacks, chitchat redirect |
 | 3.3.2 | Employee | HR Contact Details | Share HR's email when referring me. | `HR_CONTACT_EMAIL` is included in every HR handoff (`_hr_handoff()`) and in `API_DOWN_MESSAGE` |
 | 3.3.3 | Administrator | Track Unanswered Questions | See which questions the bot couldn't answer, to improve content. | `ChatMessage.unanswered`, set explicitly (never inferred from text) at genuine "couldn't answer" branches in both engines — HRMS/career-library unreachable, no career path on file for the pair. NOT set for a fuzzy policy match or a chitchat deflection; those are complete, honest answers. Support tab has a "Show only unanswered" filter and an analytics count. |
@@ -50,14 +53,11 @@ maps back to the report's numbering.
 
 ---
 
-## ❌ Not started (6)
+## ❌ Not started (3)
 
 | ID | Role | Title | Story | Blocker / note |
 |---|---|---|---|---|
-| 3.1.6 | Employee | Suggested Follow-up Questions | Suggest related questions **after** an answer. | Starter chips exist, but only on the *empty* state — wrong moment |
-| 3.2.2 | Employee | Case Follow-up | Check the status of a submitted case. | `HRRequest.status` exists and is now assigned (3.2.4), but nothing employee-facing reads it — the employee who raised a request still has no way to check it |
-| 3.2.5 | HR Dept | Update Case Status | Update a case so the employee sees progress. | `HRRequest.status` defaults to `"Open"` and nothing ever changes it — no update endpoint, no button in Support. Cheap now: the table and the admin gate both already exist, same shape as the 3.4.2 policy editor. |
-| 3.4.1 | Administrator | Manage Chatbot Responses | Create and update the bot's answers. | Different from 3.4.2/3.4.3 (now done) on purpose — this means the bot's own utterances and flow structure (`domain.yml`, `flows.yml`), not HR policy content. Those live in YAML and need a retrain to take effect, a fundamentally different mechanism from editing a database row live. No admin UI for this exists. |
+| 3.4.1 | Administrator | Manage Chatbot Responses | Create and update the bot's answers. | Different from 3.4.2/3.4.3 (now done) on purpose — this means the bot's own utterances and flow structure (`domain.yml`, `flows.yml`), not HR policy content. Those live in YAML and need a retrain to take effect, a fundamentally different mechanism from editing a database row live. **Deliberately parked — see below**, not blocked on anything technical. |
 | 3.4.5 | IT Admin | Manage Access & Permissions | Control who can edit content or view employee data. | **No real authentication** — login is click-to-pick-employee, no password. This is the one story still blocked at the architecture level, not just missing a screen. The new `/api/admin/policies` write endpoints inherit this: they're gated by the same spoofable `?requesterId=` check as everything else under `/api/admin/*`. |
 | 3.5.3 | Administrator | Preview Before Publish | Preview response changes before publishing. | No admin UI; depends on 3.4.1 |
 
@@ -72,16 +72,22 @@ uses it. Nadia Rahman's account demonstrates it end-to-end.
 
 What's actually left splits into two different problems:
 
-1. **Missing screens, not missing architecture.** This was true of 3.4.2/3.4.3/3.4.4 and they're
-   now done — the CRUD UI built directly on the admin role that already worked, no new
-   architecture needed. 3.4.1 and 3.5.3 are the same shape, just not built yet: the role and the
-   403 gate are already there for them to use.
+1. **Missing screens, not missing architecture.** This was true of 3.4.2/3.4.3/3.4.4 and 3.2.5,
+   and all four are now done — CRUD UI built directly on the admin role and the `HRRequest`
+   table that already existed, no new architecture needed. 3.5.3 is the same shape, just not
+   built yet.
 2. **Missing real authentication.** Only 3.4.5 is blocked at the architecture level. "Login" is
    still click-to-select-an-employee — fine for a demo, not a permissions boundary. Adding
    password auth is the one piece that would need a design decision, not just screen time.
 
-3.1.6 (follow-up suggestions) is the one remaining story blocked by neither — small and
-independent of both problems above.
+**3.4.1 is neither of these — it's its own architectural fork, deliberately parked rather than
+built.** Every story landed so far edits a live database row. 3.4.1 means editing the bot's own
+`domain.yml`/`flows.yml` responses, which Rasa bakes into the trained model at `rasa train`
+time — there's no live-edit path without a real design decision first: hand-edit-YAML-then-
+retrain (slow, only reaches the Rasa engine, not the rule-based one the deployed site actually
+runs), or migrate the editable responses into a DB-backed custom NLG endpoint (more work, but
+consistent with how 3.4.2 already works and reaches both engines). Worth deciding deliberately,
+not guessing at.
 
 ---
 
@@ -123,31 +129,29 @@ stories for these or note the deviation deliberately.
 
 ## Cheapest wins, updated
 
-3.3.2, 3.1.5/3.5.4, and now 3.1.4/3.2.4/3.3.3/3.4.2/3.4.3/3.4.4/3.5.1 are all done. What's
-actually cheap from here:
+3.3.2, 3.1.5/3.5.4, 3.1.4/3.2.4/3.3.3/3.4.2/3.4.3/3.4.4/3.5.1, and now 3.1.6/3.2.2/3.2.5 are all
+done. What's actually cheap from here:
 
 1. **3.1.8 Reset button** — the API route already exists and works, and now so does the 3.1.4
    idle timer's reset path; just needs a button in the widget for on-demand use too.
-2. **3.2.5 Update Case Status** — `HRRequest.status`, the admin gate, and the Support table all
-   already exist; add one `PATCH` route and a button to flip Open → Closed. Same shape as the
-   3.4.2 policy editor that just landed, so there's a template to copy. Also closes half of
-   3.2.2 once the employee side can read it back.
-3. **The HR-request inconsistency below** — routing `confirm_flag_hr` through
+2. **The HR-request inconsistency below** — routing `confirm_flag_hr` through
    `POST /api/hr-requests` is a small, contained fix with an outsized correctness payoff.
-4. **A "show only downvoted" filter for 3.5.2** — identical shape to the 3.3.3 unanswered
-   filter that just landed; would turn 3.5.2 from browsable into an actual review queue.
+3. **A "show only downvoted" filter for 3.5.2** — identical shape to the 3.3.3 unanswered
+   filter, and now also to the 3.2.2 pattern of "show only mine"; would turn 3.5.2 from
+   browsable into an actual review queue.
 
 ---
 
 ## Still open from before
 
-- **CSAT trigger point** — still not decided. You'd previously leaned toward firing CALM's
-  built-in `pattern_customer_satisfaction` after 5 minutes of inactivity rather than after every
-  reply, but flagged that an idle-timeout prompt mostly reaches people who've already left. Note
-  this is a *different* mechanism from the 3.5.1 work above — CALM's CSAT rates a whole
-  conversation and still only lives in the Rasa tracker; 3.5.1 rates individual replies and
-  writes to `chat_messages.feedback`. Persisting CSAT into the app's own database the way 3.5.1
-  now does for per-message feedback is still a real, separate, undecided piece of work.
+- **CSAT — resolved, not built.** Decided not to build a separate whole-conversation
+  satisfaction score. The gap it would have closed — measuring satisfaction from people who
+  never explicitly decline the "anything else?" prompt — is already covered by what 3.5.1 and
+  3.3.3 capture passively: per-message thumbs need no prompt at all, and the unanswered rate is
+  itself a negative signal that needs no one to volunteer it. A dedicated CSAT score would
+  duplicate that without adding new information, so it's parked rather than half-built. CALM's
+  own `pattern_customer_satisfaction` is untouched and still only lives in the Rasa tracker if
+  it ever fires — that's fine, since nothing here depends on it anymore.
 - **Policy corpus coverage** — roughly 10 of ~20 real HR areas are represented (Exam Leave,
   Training & Development, Equipment, Disciplinary & Grievance, Business Travel, etc. are still
   missing). Adding them is now a 3.4.2 admin-UI job, not a `hr_policies.json` edit — **the file

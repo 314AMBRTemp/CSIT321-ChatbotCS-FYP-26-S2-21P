@@ -101,12 +101,15 @@ th { text-align: left; padding: 12px 18px; font-weight: 700; font-size: 12px; te
 td { padding: 12px 18px; border-bottom: .5px solid #f0ece4; vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 .status-pill { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+/* Same pill look as the read-only status-pill, but an actual <select> -- 3.2.5. */
+.status-select { border: none; cursor: pointer; appearance: none; -webkit-appearance: none; }
 .s-approved { background: var(--green-soft); color: var(--green); }
 .s-pending { background: var(--amber-soft); color: var(--amber); }
 .s-rejected { background: var(--red-soft); color: var(--red); }
 .s-cancelled { background: #f0ece4; color: var(--mute); }
 /* HR requests raised from the chat, shown in the Support view. */
 .s-open { background: var(--amber-soft); color: var(--amber); }
+.s-in-progress { background: var(--violet-soft); color: var(--violet); }
 .s-closed { background: var(--green-soft); color: var(--green); }
 .empty-text { font-size: 13.5px; color: var(--mute); padding: 14px 0; }
 
@@ -262,6 +265,9 @@ tr:last-child td { border-bottom: none; }
 .chat-empty-title { font-size: 16px; font-weight: 760; font-family: Georgia, serif; }
 .chat-empty-body { font-size: 13px; color: var(--mute); margin: 7px 0 14px; line-height: 1.5; }
 .chat-chips { display: flex; flex-direction: column; gap: 7px; }
+/* Follow-up suggestions under a reply -- 3.1.6. Reuses .chat-chip's look. */
+.cb-followups { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.cb-followups-label { font-size: 11px; font-weight: 760; text-transform: uppercase; letter-spacing: .4px; color: var(--mute); }
 .chat-chip { text-align: left; background: var(--paper); border: .5px solid var(--line); border-radius: 10px; padding: 10px 13px; font-size: 12.5px; color: var(--ink); }
 .chat-chip:hover { border-color: var(--violet); }
 .cb-user { align-self: flex-end; max-width: 85%; }

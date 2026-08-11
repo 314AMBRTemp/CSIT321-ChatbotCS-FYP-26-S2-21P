@@ -37,6 +37,11 @@ export const api = {
     body: JSON.stringify(payload),
   }),
   adminHrRequests: (requesterId) => request(`/api/admin/hr-requests?requesterId=${encodeURIComponent(requesterId)}`),
+  employeeHrRequests: (employeeId) => request(`/api/employees/${employeeId}/hr-requests`),
+  adminUpdateHrRequestStatus: (requesterId, requestId, status) => request(
+    `/api/admin/hr-requests/${requestId}?requesterId=${encodeURIComponent(requesterId)}`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  ),
   // "up" / "down" / null (null clears a previous rating).
   rateMessage: (chatMessageId, feedback) => request(`/api/chat-messages/${chatMessageId}/feedback`, {
     method: "POST",

@@ -59,6 +59,7 @@ def _blank_answer(text):
         "policyTopic": None,
         "situation": None,
         "unanswered": False,
+        "relatedPolicies": [],
     }
 
 
@@ -107,6 +108,7 @@ def _merge_rasa_messages(messages):
         "policyTopic": metadata.get("policyTopic") or None,
         "situation": metadata.get("situation") or None,
         "unanswered": bool(metadata.get("unanswered", False)),
+        "relatedPolicies": metadata.get("relatedPolicies") or [],
         "buttons": [
             {"title": str(b.get("title", "")), "payload": str(b.get("payload", ""))}
             for b in buttons
