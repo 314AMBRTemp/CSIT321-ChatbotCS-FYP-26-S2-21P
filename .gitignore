@@ -16,3 +16,9 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Claude Code: per-machine permission overrides, not meant to be shared.
+.claude/settings.local.json
+# Agent tooling (Playwright driver for manual UI verification) -- not needed to
+# run the app itself, kept local rather than pushed.
+.claude/skills/
