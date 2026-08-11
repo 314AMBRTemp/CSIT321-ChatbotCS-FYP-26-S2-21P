@@ -11,6 +11,7 @@ from services.policy_repository import load_policies as load_policies_from_file
 from services.career_repository import find_career_path, list_target_departments_from
 from services.askivy_engine import answer_question, employee_facts, default_leave_dates
 from services.policy_answer import build_policy_answer
+from services.policy_drafter import draft_policy
 from services.rasa_adapter import rasa_bp
 
 load_dotenv()
@@ -374,6 +375,30 @@ def create_app():
             return error
         rows = Policy.query.order_by(Policy.sort_order, Policy.id).all()
         return jsonify({"source": active_source(), "policies": [row.to_dict() for row in rows]})
+
+    @app.post("/api/admin/policies/draft")
+    def admin_draft_policy():
+        """Claude drafts a policy from a rough idea. Nothing is saved here -- the draft goes
+        back to the admin's Add Policy form for editing, same as if they'd typed it by hand.
+        This is the one place in the app the model is allowed to invent HR content, and the
+        reason that's safe is nothing downstream treats a draft as real until a human saves
+        it through the normal admin_create_policy route below."""
+        _, error = _require_admin()
+        if error:
+            return error
+
+        payload = request.get_json(silent=True) or {}
+        idea = str(payload.get("idea", "")).strip()
+        if not idea:
+            return jsonify({"error": "Describe the policy you want drafted first."}), 400
+
+        draft, draft_error = draft_policy(idea)
+        if draft_error:
+            # Empty-idea is the only case that's the caller's fault, and it's already
+            # handled above -- everything draft_policy() itself can fail on (no key
+            # configured, Claude unreachable, malformed response) is an upstream problem.
+            return jsonify({"error": draft_error}), 502
+        return jsonify(draft)
 
     def _policy_payload_errors(payload):
         for field in ("title", "category", "summary"):

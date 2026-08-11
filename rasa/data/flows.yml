@@ -171,10 +171,16 @@ flows:
   # ── 5. General policy lookup ───────────────────────────────────────────────
   policy_question:
     description: >
-      A general HR policy question that is not about the employee's own leave
-      balance or a leave application — for example notice period, resignation,
-      performance bonus, expense claims, working from home or hybrid rules, or
-      the code of conduct.
+      Any general HR policy question -- not the employee's own leave balance, not
+      applying for or cancelling leave, not a compassionate/parental eligibility check,
+      and not a career-path question. Covers whatever HR policy the employee is
+      actually asking about, whether or not it's named here -- notice period,
+      resignation, performance bonus, expense claims, working from home or hybrid
+      rules, code of conduct, sick leave rules, annual leave carry-over, internal
+      transfer, or any other HR policy area. These examples are illustrative, not
+      exhaustive: the actual policy library is looked up separately by topic, so route
+      any policy-shaped question here even when its subject isn't one of the ones
+      listed above -- new policies get added to that library over time.
     steps:
       - collect: policy_topic
         description: >

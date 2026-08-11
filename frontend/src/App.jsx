@@ -303,11 +303,14 @@ function AnalyticsSection({ analytics }) {
 
 const emptyPolicyForm = { id: "", title: "", category: "", summary: "", rules: "" };
 
-function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
+function PolicyManager({ policies, source, onCreate, onUpdate, onDelete, onDraft }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyPolicyForm);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [draftIdea, setDraftIdea] = useState("");
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState("");
 
   function startEdit(policy) {
     setEditingId(policy.id);
@@ -331,6 +334,25 @@ function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
     setEditingId(null);
     setCreating(false);
     setForm(emptyPolicyForm);
+    setDraftIdea("");
+    setDraftError("");
+  }
+
+  // The draft never touches onCreate -- it only fills the same fields typing would have,
+  // so the existing Save button (and the review it implies) is still the only way anything
+  // reaches the database. Deliberately keeps whatever's already in the ID field: drafting
+  // fills the content, not the identifier the admin is choosing.
+  async function draft() {
+    setDrafting(true);
+    setDraftError("");
+    try {
+      const result = await onDraft(draftIdea);
+      setForm((f) => ({ ...f, title: result.title, category: result.category, summary: result.summary, rules: result.rules.join("\n") }));
+    } catch (err) {
+      setDraftError(err.message || "Couldn't draft that.");
+    } finally {
+      setDrafting(false);
+    }
   }
 
   async function save() {
@@ -396,6 +418,23 @@ function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
         <button className="cb-action-btn" onClick={startCreate}>Add policy</button>
       ) : (
         <div className="form-card">
+          {creating ? (
+            <div className="draft-box">
+              <label>Draft with AI (optional) — describe the policy in a sentence, review everything it fills in below</label>
+              <div className="draft-row">
+                <input
+                  placeholder="e.g. a policy for business travel and expenses"
+                  value={draftIdea}
+                  onChange={(e) => setDraftIdea(e.target.value)}
+                  disabled={drafting}
+                />
+                <button className="btn-link" disabled={drafting || !draftIdea.trim()} onClick={draft}>
+                  {drafting ? "Drafting…" : "✨ Draft"}
+                </button>
+              </div>
+              {draftError ? <div className="draft-error">{draftError}</div> : null}
+            </div>
+          ) : null}
           <div className="form-group">
             <label>ID (e.g. TRAVEL-01 — pick something new for an FAQ entry)</label>
             <input
@@ -430,7 +469,7 @@ function PolicyManager({ policies, source, onCreate, onUpdate, onDelete }) {
   );
 }
 
-function AdminPage({ data, users, filter, onFilterChange, hrRequests, onUpdateStatus, analytics, policies, policySource, onCreatePolicy, onUpdatePolicy, onDeletePolicy }) {
+function AdminPage({ data, users, filter, onFilterChange, hrRequests, onUpdateStatus, analytics, policies, policySource, onCreatePolicy, onUpdatePolicy, onDeletePolicy, onDraftPolicy }) {
   const [unansweredOnly, setUnansweredOnly] = useState(false);
   const messages = unansweredOnly ? (data?.messages || []).filter((m) => m.unanswered) : data?.messages;
 
@@ -494,6 +533,7 @@ function AdminPage({ data, users, filter, onFilterChange, hrRequests, onUpdateSt
           onCreate={onCreatePolicy}
           onUpdate={onUpdatePolicy}
           onDelete={onDeletePolicy}
+          onDraft={onDraftPolicy}
         />
       ) : null}
 
@@ -661,6 +701,13 @@ function App() {
     }
   }
 
+  // No toast, no refresh -- nothing is saved here. draft() in PolicyManager fills the form
+  // fields with whatever comes back; errors are shown inline in that form, not as a toast,
+  // since they're about the draft itself, not an action that partially happened.
+  async function draftPolicy(idea) {
+    return api.adminDraftPolicy(currentUser.id, idea);
+  }
+
   async function createPolicy(policy) {
     try {
       await api.adminCreatePolicy(currentUser.id, policy);
@@ -784,6 +831,7 @@ function App() {
           onCreatePolicy={createPolicy}
           onUpdatePolicy={updatePolicy}
           onDeletePolicy={deletePolicy}
+          onDraftPolicy={draftPolicy}
         />
       ) : null}
 

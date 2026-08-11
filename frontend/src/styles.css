@@ -207,6 +207,13 @@ tr:last-child td { border-bottom: none; }
 .btn-link { background: none; border: none; color: var(--violet); font-size: 12.5px; font-weight: 760; padding: 0; }
 .btn-link:hover { text-decoration: underline; }
 .btn-link-danger { color: var(--red); }
+/* "Draft with AI" -- 3.4.2's policy form, generation only, never a save path of its own. */
+.draft-box { background: var(--violet-soft); border-radius: 11px; padding: 14px; margin-bottom: 18px; }
+.draft-box label { font-size: 12.5px; font-weight: 700; color: var(--mute); display: block; margin-bottom: 8px; }
+.draft-row { display: flex; gap: 10px; }
+.draft-row input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); }
+.draft-row .btn-link { white-space: nowrap; font-size: 13px; }
+.draft-error { margin-top: 8px; font-size: 12.5px; color: var(--red); font-weight: 650; }
 .policy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
 .policy-card { padding: 18px; }
 .policy-id { font-size: 11px; font-weight: 760; color: var(--teal); letter-spacing: .5px; text-transform: uppercase; }

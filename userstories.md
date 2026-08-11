@@ -124,6 +124,7 @@ stories for these or note the deviation deliberately.
 | Two interchangeable chat engines | rule-based + Rasa/Claude behind one response contract |
 | Tailored, generated policy explanations | `policy_explainer.py` + `policy_situation.py` — a general summary is generated and cached per policy; eligibility is computed from the employee's own record, never guessed by the model |
 | Manager lookup for HR handoffs | `Employee.manager_name/manager_email`, seeded from department heads, used to "cc your manager" on an HR request |
+| Draft-with-AI policy creation | `services/policy_drafter.py` + `POST /api/admin/policies/draft` — Claude drafts title/category/summary/rules from a rough admin idea, few-shot grounded on real existing policies. Never saved by itself; lands in the same Add Policy form as typing by hand, so the existing review-before-save step still applies. The one place in the app the model is allowed to invent HR content, made safe by nothing downstream trusting a draft until a human saves it. |
 
 ---
 
@@ -157,7 +158,17 @@ done. What's actually cheap from here:
   missing). Adding them is now a 3.4.2 admin-UI job, not a `hr_policies.json` edit — **the file
   stopped being the live source** the moment `seed_policies()` switched to seed-once for the
   policy editor (see 3.4.2 above). Worth doing before analytics (3.4.4) would have anything
-  meaningful to show for those topics.
+  meaningful to show for those topics. The draft-with-AI feature above makes adding these
+  cheaper, but doesn't do it for you.
+- **`policy_question` routing description generalised, retrain deliberately deferred.** The
+  flow's description used to read as a closed list of example topics; genuinely new policy
+  areas (Business Travel, Equipment, ...) risked not being recognised as policy questions at
+  all. Reworded to state explicitly that the examples are illustrative, not exhaustive — but
+  that change only takes effect after a `rasa train` + server restart, and it wasn't retrained
+  in isolation just for this. Deliberate: the router already generalises reasonably well, so
+  this is a hedge against a hypothetical, not a fix for an observed failure. It'll ride along
+  on whichever retrain happens next for an actual reason. If a newly-drafted policy's topic
+  ever visibly fails to route, that's the signal to retrain for real, not before.
 
 ---
 

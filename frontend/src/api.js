@@ -49,6 +49,12 @@ export const api = {
   }),
   adminAnalytics: (requesterId) => request(`/api/admin/analytics?requesterId=${encodeURIComponent(requesterId)}`),
   adminPolicies: (requesterId) => request(`/api/admin/policies?requesterId=${encodeURIComponent(requesterId)}`),
+  // Drafts a policy from a rough idea via Claude. Never saves anything -- the caller puts
+  // the draft into the Add Policy form for review, same as adminCreatePolicy below.
+  adminDraftPolicy: (requesterId, idea) => request(`/api/admin/policies/draft?requesterId=${encodeURIComponent(requesterId)}`, {
+    method: "POST",
+    body: JSON.stringify({ idea }),
+  }),
   adminCreatePolicy: (requesterId, policy) => request(`/api/admin/policies?requesterId=${encodeURIComponent(requesterId)}`, {
     method: "POST",
     body: JSON.stringify(policy),
