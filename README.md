@@ -22,7 +22,18 @@ React (Vite) · Flask + SQLAlchemy · SQLite (dev) / Postgres (prod) · Rasa Pro
 
 ## How to run it
 
-Four terminals, each with its own virtual environment:
+**Fastest path — the bat files**, from the project root:
+
+```powershell
+setup-askivy.bat   # one-time: installs uv/Node, creates both venvs, installs deps,
+                    # creates the .env files, trains the Rasa model
+run-askivy.bat     # every time: opens all 4 servers, each in its own window
+```
+
+Changed `domain.yml` or `data/flows.yml`? Run `retrain-askivy.bat` — it retrains
+the model and offers to restart the two Rasa processes so the change takes effect.
+
+**Without the bat files** — four terminals, each with its own virtual environment:
 
 ```powershell
 # 1. Backend — :5000

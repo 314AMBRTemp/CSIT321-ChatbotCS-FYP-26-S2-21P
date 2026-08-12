@@ -314,14 +314,33 @@ addresses the root cause, the ASCII-only rule is the belt-and-suspenders half.
 
 ## Running it
 
+### The bat files (fastest path)
+
+`setup-askivy.bat`, `run-askivy.bat`, and `retrain-askivy.bat` live in the project
+root and wrap everything below into three double-clickable scripts:
+
+| Script | When to use it | What it does |
+|---|---|---|
+| `setup-askivy.bat` | Once, on a fresh clone/machine | Installs `uv` and Node via winget if missing, pins Python 3.12, creates `backend/.venv` and `rasa/.venv`, `npm install`s the frontend, creates `.env`/`.env.local` from the `.env.example` templates, and trains the Rasa model once real keys are in `rasa/.env`. Safe to re-run — every step is skipped if already done. |
+| `run-askivy.bat` | Every time you want the app up | Checks ports 5000/5005/5055/5173 for stale leftover processes (offers to kill them — a stale Rasa server silently keeps serving the *old* model), then opens all 4 servers, each in its own PowerShell window. |
+| `retrain-askivy.bat` | After editing `domain.yml` or `data/flows.yml` | Runs `rasa train`, then finds whatever is currently holding ports 5005/5055 and offers to restart just those two (leaves Flask and the frontend alone, since neither needs a retrain to pick up the change). |
+
+`setup-askivy.bat` will stop and ask you to fill in `rasa\.env` if
+`ANTHROPIC_API_KEY` or `RASA_LICENSE` are still placeholders — see "Stage 2" below
+for where to get them.
+
+The rest of this section is the manual, terminal-by-terminal breakdown — useful if
+you don't have `winget`, want to run something outside the bat-file flow (e.g. a
+single stage), or just want to see what's happening under the hood.
+
 ### Stage 1 — base app (no keys needed)
 
-**Already done as of this session** — `backend/venv` was recreated against Python
+**Already done as of this session** — `backend/.venv` was recreated against Python
 3.12.13 (installed via `uv python install 3.12`) and verified to boot. Just run it:
 
 ```powershell
 cd backend
-venv\Scripts\activate
+.venv\Scripts\activate
 python app.py                  # :5000, seeds the DB on first boot
 ```
 
@@ -330,10 +349,10 @@ does **not** resolve a `uv`-installed interpreter here — use `uv` directly:
 
 ```powershell
 cd backend
-Remove-Item -Recurse -Force venv
-uv venv --python 3.12 venv
-uv pip install -p venv\Scripts\python.exe -r requirements.txt
-venv\Scripts\activate
+Remove-Item -Recurse -Force .venv
+uv venv --python 3.12 .venv
+uv pip install -p .venv\Scripts\python.exe -r requirements.txt
+.venv\Scripts\activate
 python app.py
 ```
 

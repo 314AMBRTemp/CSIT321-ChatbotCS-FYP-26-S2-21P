@@ -88,12 +88,20 @@ REM ============================================================
 
 echo.
 echo [3/7] Backend environment...
-if exist "%ROOT%backend\.venv\Scripts\python.exe" (
-  echo   - backend\.venv already exists, keeping it
-) else (
-  uv venv --python 3.12 "%ROOT%backend\.venv"
-  if errorlevel 1 goto :fail
+if not exist "%ROOT%backend\.venv\Scripts\python.exe" goto :backend_venv_create
+"%ROOT%backend\.venv\Scripts\python.exe" -c "" >nul 2>&1
+if not errorlevel 1 (
+  echo   - backend\.venv already exists and works, keeping it
+  goto :backend_venv_done
 )
+echo   - backend\.venv exists but is broken ^(venvs don't survive being copied
+echo     between machines - pyvenv.cfg hardcodes the original machine's Python
+echo     path^), recreating it
+rmdir /s /q "%ROOT%backend\.venv"
+:backend_venv_create
+uv venv --python 3.12 "%ROOT%backend\.venv"
+if errorlevel 1 goto :fail
+:backend_venv_done
 echo   - installing backend dependencies
 uv pip install -p "%ROOT%backend\.venv\Scripts\python.exe" -r "%ROOT%backend\requirements.txt"
 if errorlevel 1 goto :fail
@@ -106,12 +114,20 @@ REM ============================================================
 
 echo.
 echo [4/7] Rasa environment (this one is large, please be patient)...
-if exist "%ROOT%rasa\.venv\Scripts\python.exe" (
-  echo   - rasa\.venv already exists, keeping it
-) else (
-  uv venv --python 3.12 "%ROOT%rasa\.venv"
-  if errorlevel 1 goto :fail
+if not exist "%ROOT%rasa\.venv\Scripts\python.exe" goto :rasa_venv_create
+"%ROOT%rasa\.venv\Scripts\python.exe" -c "" >nul 2>&1
+if not errorlevel 1 (
+  echo   - rasa\.venv already exists and works, keeping it
+  goto :rasa_venv_done
 )
+echo   - rasa\.venv exists but is broken ^(venvs don't survive being copied
+echo     between machines - pyvenv.cfg hardcodes the original machine's Python
+echo     path^), recreating it
+rmdir /s /q "%ROOT%rasa\.venv"
+:rasa_venv_create
+uv venv --python 3.12 "%ROOT%rasa\.venv"
+if errorlevel 1 goto :fail
+:rasa_venv_done
 echo   - installing Rasa dependencies
 uv pip install -p "%ROOT%rasa\.venv\Scripts\python.exe" -r "%ROOT%rasa\requirements.txt"
 if errorlevel 1 goto :fail
